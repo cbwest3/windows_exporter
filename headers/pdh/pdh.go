@@ -29,7 +29,7 @@
 //go:build windows
 
 
-package win
+package pdh
 
 import (
 	"golang.org/x/sys/windows"
@@ -324,19 +324,19 @@ func PdhCloseQuery(hQuery PDH_HQUERY) uint32 {
 // of the counter can be extracted with PdhGetFormattedCounterValue(). For example, the following code
 // requires at least two calls:
 //
-//	var handle win.PDH_HQUERY
-//	var counterHandle win.PDH_HCOUNTER
-//	ret := win.PdhOpenQuery(0, 0, &handle)
-//	ret = win.PdhAddEnglishCounter(handle, "\\Processor(_Total)\\% Idle Time", 0, &counterHandle)
-//	var derp win.PDH_FMT_COUNTERVALUE_DOUBLE
+//	var handle pdh.PDH_HQUERY
+//	var counterHandle pdh.PDH_HCOUNTER
+//	ret := pdh.PdhOpenQuery(0, 0, &handle)
+//	ret = pdh.PdhAddEnglishCounter(handle, "\\Processor(_Total)\\% Idle Time", 0, &counterHandle)
+//	var derp pdh.PDH_FMT_COUNTERVALUE_DOUBLE
 //
-//	ret = win.PdhCollectQueryData(handle)
+//	ret = pdh.PdhCollectQueryData(handle)
 //	fmt.Printf("Collect return code is %x\n", ret) // return code will be PDH_CSTATUS_INVALID_DATA
-//	ret = win.PdhGetFormattedCounterValueDouble(counterHandle, 0, &derp)
+//	ret = pdh.PdhGetFormattedCounterValueDouble(counterHandle, 0, &derp)
 //
-//	ret = win.PdhCollectQueryData(handle)
+//	ret = pdh.PdhCollectQueryData(handle)
 //	fmt.Printf("Collect return code is %x\n", ret) // return code will be ERROR_SUCCESS
-//	ret = win.PdhGetFormattedCounterValueDouble(counterHandle, 0, &derp)
+//	ret = pdh.PdhGetFormattedCounterValueDouble(counterHandle, 0, &derp)
 //
 // The PdhCollectQueryData will return an error in the first call because it needs two values for
 // displaying the correct data for the processor idle time. The second call will have a 0 return code.
@@ -423,20 +423,20 @@ func PdhGetFormattedCounterValueLong(hCounter PDH_HCOUNTER, lpdwType *uint32, pV
 //
 //	var bufSize uint32
 //	var bufCount uint32
-//	var size uint32 = uint32(unsafe.Sizeof(win.PDH_FMT_COUNTERVALUE_ITEM_DOUBLE{}))
-//	var emptyBuf [1]win.PDH_FMT_COUNTERVALUE_ITEM_DOUBLE // need at least 1 addressable null ptr.
+//	var size uint32 = uint32(unsafe.Sizeof(pdh.PDH_FMT_COUNTERVALUE_ITEM_DOUBLE{}))
+//	var emptyBuf [1]pdh.PDH_FMT_COUNTERVALUE_ITEM_DOUBLE // need at least 1 addressable null ptr.
 //
 //	for {
 //		// collect
-//		ret := win.PdhCollectQueryData(queryHandle)
-//		if ret == win.ERROR_SUCCESS {
-//			ret = win.PdhGetFormattedCounterArrayDouble(counterHandle, &bufSize, &bufCount, &emptyBuf[0]) // uses null ptr here according to MSDN.
-//			if ret == win.PDH_MORE_DATA {
-//				filledBuf := make([]win.PDH_FMT_COUNTERVALUE_ITEM_DOUBLE, bufCount*size)
-//				ret = win.PdhGetFormattedCounterArrayDouble(counterHandle, &bufSize, &bufCount, &filledBuf[0])
+//		ret := pdh.PdhCollectQueryData(queryHandle)
+//		if ret == pdh.ERROR_SUCCESS {
+//			ret = pdh.PdhGetFormattedCounterArrayDouble(counterHandle, &bufSize, &bufCount, &emptyBuf[0]) // uses null ptr here according to MSDN.
+//			if ret == pdh.PDH_MORE_DATA {
+//				filledBuf := make([]pdh.PDH_FMT_COUNTERVALUE_ITEM_DOUBLE, bufCount*size)
+//				ret = pdh.PdhGetFormattedCounterArrayDouble(counterHandle, &bufSize, &bufCount, &filledBuf[0])
 //				for i := 0; i < int(bufCount); i++ {
 //					c := filledBuf[i]
-//					var s string = win.UTF16PtrToString(c.SzName)
+//					var s string = pdh.UTF16PtrToString(c.SzName)
 //					fmt.Printf("Index %d -> %s, value %v\n", i, s, c.FmtValue.DoubleValue)
 //				}
 //
