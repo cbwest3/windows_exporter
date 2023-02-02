@@ -28,7 +28,6 @@
 
 //go:build windows
 
-
 package pdh
 
 import (
@@ -37,119 +36,119 @@ import (
 	"unsafe"
 )
 
-// PDH error codes, which can be returned by all Pdh* functions. Taken from mingw-w64 pdhmsg.h
+// PDH error codes, which can be returned by all pdh.* functions. Taken from mingw-w64 pdhmsg.h
 const (
-	PDH_CSTATUS_VALID_DATA                     = 0x00000000 // The returned data is valid.
-	PDH_CSTATUS_NEW_DATA                       = 0x00000001 // The return data value is valid and different from the last sample.
-	PDH_CSTATUS_NO_MACHINE                     = 0x800007D0 // Unable to connect to the specified computer, or the computer is offline.
-	PDH_CSTATUS_NO_INSTANCE                    = 0x800007D1
-	PDH_MORE_DATA                              = 0x800007D2 // The PdhGetFormattedCounterArray* function can return this if there's 'more data to be displayed'.
-	PDH_CSTATUS_ITEM_NOT_VALIDATED             = 0x800007D3
-	PDH_RETRY                                  = 0x800007D4
-	PDH_NO_DATA                                = 0x800007D5 // The query does not currently contain any counters (for example, limited access)
-	PDH_CALC_NEGATIVE_DENOMINATOR              = 0x800007D6
-	PDH_CALC_NEGATIVE_TIMEBASE                 = 0x800007D7
-	PDH_CALC_NEGATIVE_VALUE                    = 0x800007D8
-	PDH_DIALOG_CANCELLED                       = 0x800007D9
-	PDH_END_OF_LOG_FILE                        = 0x800007DA
-	PDH_ASYNC_QUERY_TIMEOUT                    = 0x800007DB
-	PDH_CANNOT_SET_DEFAULT_REALTIME_DATASOURCE = 0x800007DC
-	PDH_CSTATUS_NO_OBJECT                      = 0xC0000BB8
-	PDH_CSTATUS_NO_COUNTER                     = 0xC0000BB9 // The specified counter could not be found.
-	PDH_CSTATUS_INVALID_DATA                   = 0xC0000BBA // The counter was successfully found, but the data returned is not valid.
-	PDH_MEMORY_ALLOCATION_FAILURE              = 0xC0000BBB
-	PDH_INVALID_HANDLE                         = 0xC0000BBC
-	PDH_INVALID_ARGUMENT                       = 0xC0000BBD // Required argument is missing or incorrect.
-	PDH_FUNCTION_NOT_FOUND                     = 0xC0000BBE
-	PDH_CSTATUS_NO_COUNTERNAME                 = 0xC0000BBF
-	PDH_CSTATUS_BAD_COUNTERNAME                = 0xC0000BC0 // Unable to parse the counter path. Check the format and syntax of the specified path.
-	PDH_INVALID_BUFFER                         = 0xC0000BC1
-	PDH_INSUFFICIENT_BUFFER                    = 0xC0000BC2
-	PDH_CANNOT_CONNECT_MACHINE                 = 0xC0000BC3
-	PDH_INVALID_PATH                           = 0xC0000BC4
-	PDH_INVALID_INSTANCE                       = 0xC0000BC5
-	PDH_INVALID_DATA                           = 0xC0000BC6 // specified counter does not contain valid data or a successful status code.
-	PDH_NO_DIALOG_DATA                         = 0xC0000BC7
-	PDH_CANNOT_READ_NAME_STRINGS               = 0xC0000BC8
-	PDH_LOG_FILE_CREATE_ERROR                  = 0xC0000BC9
-	PDH_LOG_FILE_OPEN_ERROR                    = 0xC0000BCA
-	PDH_LOG_TYPE_NOT_FOUND                     = 0xC0000BCB
-	PDH_NO_MORE_DATA                           = 0xC0000BCC
-	PDH_ENTRY_NOT_IN_LOG_FILE                  = 0xC0000BCD
-	PDH_DATA_SOURCE_IS_LOG_FILE                = 0xC0000BCE
-	PDH_DATA_SOURCE_IS_REAL_TIME               = 0xC0000BCF
-	PDH_UNABLE_READ_LOG_HEADER                 = 0xC0000BD0
-	PDH_FILE_NOT_FOUND                         = 0xC0000BD1
-	PDH_FILE_ALREADY_EXISTS                    = 0xC0000BD2
-	PDH_NOT_IMPLEMENTED                        = 0xC0000BD3
-	PDH_STRING_NOT_FOUND                       = 0xC0000BD4
-	PDH_UNABLE_MAP_NAME_FILES                  = 0x80000BD5
-	PDH_UNKNOWN_LOG_FORMAT                     = 0xC0000BD6
-	PDH_UNKNOWN_LOGSVC_COMMAND                 = 0xC0000BD7
-	PDH_LOGSVC_QUERY_NOT_FOUND                 = 0xC0000BD8
-	PDH_LOGSVC_NOT_OPENED                      = 0xC0000BD9
-	PDH_WBEM_ERROR                             = 0xC0000BDA
-	PDH_ACCESS_DENIED                          = 0xC0000BDB
-	PDH_LOG_FILE_TOO_SMALL                     = 0xC0000BDC
-	PDH_INVALID_DATASOURCE                     = 0xC0000BDD
-	PDH_INVALID_SQLDB                          = 0xC0000BDE
-	PDH_NO_COUNTERS                            = 0xC0000BDF
-	PDH_SQL_ALLOC_FAILED                       = 0xC0000BE0
-	PDH_SQL_ALLOCCON_FAILED                    = 0xC0000BE1
-	PDH_SQL_EXEC_DIRECT_FAILED                 = 0xC0000BE2
-	PDH_SQL_FETCH_FAILED                       = 0xC0000BE3
-	PDH_SQL_ROWCOUNT_FAILED                    = 0xC0000BE4
-	PDH_SQL_MORE_RESULTS_FAILED                = 0xC0000BE5
-	PDH_SQL_CONNECT_FAILED                     = 0xC0000BE6
-	PDH_SQL_BIND_FAILED                        = 0xC0000BE7
-	PDH_CANNOT_CONNECT_WMI_SERVER              = 0xC0000BE8
-	PDH_PLA_COLLECTION_ALREADY_RUNNING         = 0xC0000BE9
-	PDH_PLA_ERROR_SCHEDULE_OVERLAP             = 0xC0000BEA
-	PDH_PLA_COLLECTION_NOT_FOUND               = 0xC0000BEB
-	PDH_PLA_ERROR_SCHEDULE_ELAPSED             = 0xC0000BEC
-	PDH_PLA_ERROR_NOSTART                      = 0xC0000BED
-	PDH_PLA_ERROR_ALREADY_EXISTS               = 0xC0000BEE
-	PDH_PLA_ERROR_TYPE_MISMATCH                = 0xC0000BEF
-	PDH_PLA_ERROR_FILEPATH                     = 0xC0000BF0
-	PDH_PLA_SERVICE_ERROR                      = 0xC0000BF1
-	PDH_PLA_VALIDATION_ERROR                   = 0xC0000BF2
-	PDH_PLA_VALIDATION_WARNING                 = 0x80000BF3
-	PDH_PLA_ERROR_NAME_TOO_LONG                = 0xC0000BF4
-	PDH_INVALID_SQL_LOG_FORMAT                 = 0xC0000BF5
-	PDH_COUNTER_ALREADY_IN_QUERY               = 0xC0000BF6
-	PDH_BINARY_LOG_CORRUPT                     = 0xC0000BF7
-	PDH_LOG_SAMPLE_TOO_SMALL                   = 0xC0000BF8
-	PDH_OS_LATER_VERSION                       = 0xC0000BF9
-	PDH_OS_EARLIER_VERSION                     = 0xC0000BFA
-	PDH_INCORRECT_APPEND_TIME                  = 0xC0000BFB
-	PDH_UNMATCHED_APPEND_COUNTER               = 0xC0000BFC
-	PDH_SQL_ALTER_DETAIL_FAILED                = 0xC0000BFD
-	PDH_QUERY_PERF_DATA_TIMEOUT                = 0xC0000BFE
+	CSTATUS_VALID_DATA                     = 0x00000000 // The returned data is valid.
+	CSTATUS_NEW_DATA                       = 0x00000001 // The return data value is valid and different from the last sample.
+	CSTATUS_NO_MACHINE                     = 0x800007D0 // Unable to connect to the specified computer, or the computer is offline.
+	CSTATUS_NO_INSTANCE                    = 0x800007D1
+	MORE_DATA                              = 0x800007D2 // The GetFormattedCounterArray* function can return this if there's 'more data to be displayed'.
+	CSTATUS_ITEM_NOT_VALIDATED             = 0x800007D3
+	RETRY                                  = 0x800007D4
+	NO_DATA                                = 0x800007D5 // The query does not currently contain any counters (for example, limited access)
+	CALC_NEGATIVE_DENOMINATOR              = 0x800007D6
+	CALC_NEGATIVE_TIMEBASE                 = 0x800007D7
+	CALC_NEGATIVE_VALUE                    = 0x800007D8
+	DIALOG_CANCELLED                       = 0x800007D9
+	END_OF_LOG_FILE                        = 0x800007DA
+	ASYNC_QUERY_TIMEOUT                    = 0x800007DB
+	CANNOT_SET_DEFAULT_REALTIME_DATASOURCE = 0x800007DC
+	CSTATUS_NO_OBJECT                      = 0xC0000BB8
+	CSTATUS_NO_COUNTER                     = 0xC0000BB9 // The specified counter could not be found.
+	CSTATUS_INVALID_DATA                   = 0xC0000BBA // The counter was successfully found, but the data returned is not valid.
+	MEMORY_ALLOCATION_FAILURE              = 0xC0000BBB
+	INVALID_HANDLE                         = 0xC0000BBC
+	INVALID_ARGUMENT                       = 0xC0000BBD // Required argument is missing or incorrect.
+	FUNCTION_NOT_FOUND                     = 0xC0000BBE
+	CSTATUS_NO_COUNTERNAME                 = 0xC0000BBF
+	CSTATUS_BAD_COUNTERNAME                = 0xC0000BC0 // Unable to parse the counter path. Check the format and syntax of the specified path.
+	INVALID_BUFFER                         = 0xC0000BC1
+	INSUFFICIENT_BUFFER                    = 0xC0000BC2
+	CANNOT_CONNECT_MACHINE                 = 0xC0000BC3
+	INVALID_PATH                           = 0xC0000BC4
+	INVALID_INSTANCE                       = 0xC0000BC5
+	INVALID_DATA                           = 0xC0000BC6 // specified counter does not contain valid data or a successful status code.
+	NO_DIALOG_DATA                         = 0xC0000BC7
+	CANNOT_READ_NAME_STRINGS               = 0xC0000BC8
+	LOG_FILE_CREATE_ERROR                  = 0xC0000BC9
+	LOG_FILE_OPEN_ERROR                    = 0xC0000BCA
+	LOG_TYPE_NOT_FOUND                     = 0xC0000BCB
+	NO_MORE_DATA                           = 0xC0000BCC
+	ENTRY_NOT_IN_LOG_FILE                  = 0xC0000BCD
+	DATA_SOURCE_IS_LOG_FILE                = 0xC0000BCE
+	DATA_SOURCE_IS_REAL_TIME               = 0xC0000BCF
+	UNABLE_READ_LOG_HEADER                 = 0xC0000BD0
+	FILE_NOT_FOUND                         = 0xC0000BD1
+	FILE_ALREADY_EXISTS                    = 0xC0000BD2
+	NOT_IMPLEMENTED                        = 0xC0000BD3
+	STRING_NOT_FOUND                       = 0xC0000BD4
+	UNABLE_MAP_NAME_FILES                  = 0x80000BD5
+	UNKNOWN_LOG_FORMAT                     = 0xC0000BD6
+	UNKNOWN_LOGSVC_COMMAND                 = 0xC0000BD7
+	LOGSVC_QUERY_NOT_FOUND                 = 0xC0000BD8
+	LOGSVC_NOT_OPENED                      = 0xC0000BD9
+	WBEM_ERROR                             = 0xC0000BDA
+	ACCESS_DENIED                          = 0xC0000BDB
+	LOG_FILE_TOO_SMALL                     = 0xC0000BDC
+	INVALID_DATASOURCE                     = 0xC0000BDD
+	INVALID_SQLDB                          = 0xC0000BDE
+	NO_COUNTERS                            = 0xC0000BDF
+	SQL_ALLOC_FAILED                       = 0xC0000BE0
+	SQL_ALLOCCON_FAILED                    = 0xC0000BE1
+	SQL_EXEC_DIRECT_FAILED                 = 0xC0000BE2
+	SQL_FETCH_FAILED                       = 0xC0000BE3
+	SQL_ROWCOUNT_FAILED                    = 0xC0000BE4
+	SQL_MORE_RESULTS_FAILED                = 0xC0000BE5
+	SQL_CONNECT_FAILED                     = 0xC0000BE6
+	SQL_BIND_FAILED                        = 0xC0000BE7
+	CANNOT_CONNECT_WMI_SERVER              = 0xC0000BE8
+	PLA_COLLECTION_ALREADY_RUNNING         = 0xC0000BE9
+	PLA_ERROR_SCHEDULE_OVERLAP             = 0xC0000BEA
+	PLA_COLLECTION_NOT_FOUND               = 0xC0000BEB
+	PLA_ERROR_SCHEDULE_ELAPSED             = 0xC0000BEC
+	PLA_ERROR_NOSTART                      = 0xC0000BED
+	PLA_ERROR_ALREADY_EXISTS               = 0xC0000BEE
+	PLA_ERROR_TYPE_MISMATCH                = 0xC0000BEF
+	PLA_ERROR_FILEPATH                     = 0xC0000BF0
+	PLA_SERVICE_ERROR                      = 0xC0000BF1
+	PLA_VALIDATION_ERROR                   = 0xC0000BF2
+	PLA_VALIDATION_WARNING                 = 0x80000BF3
+	PLA_ERROR_NAME_TOO_LONG                = 0xC0000BF4
+	INVALID_SQL_LOG_FORMAT                 = 0xC0000BF5
+	COUNTER_ALREADY_IN_QUERY               = 0xC0000BF6
+	BINARY_LOG_CORRUPT                     = 0xC0000BF7
+	LOG_SAMPLE_TOO_SMALL                   = 0xC0000BF8
+	OS_LATER_VERSION                       = 0xC0000BF9
+	OS_EARLIER_VERSION                     = 0xC0000BFA
+	INCORRECT_APPEND_TIME                  = 0xC0000BFB
+	UNMATCHED_APPEND_COUNTER               = 0xC0000BFC
+	SQL_ALTER_DETAIL_FAILED                = 0xC0000BFD
+	QUERY_PERF_DATA_TIMEOUT                = 0xC0000BFE
 )
 
 // Formatting options for GetFormattedCounterValue().
 const (
-	PDH_FMT_RAW          = 0x00000010
-	PDH_FMT_ANSI         = 0x00000020
-	PDH_FMT_UNICODE      = 0x00000040
-	PDH_FMT_LONG         = 0x00000100 // Return data as a long int.
-	PDH_FMT_DOUBLE       = 0x00000200 // Return data as a double precision floating point real.
-	PDH_FMT_LARGE        = 0x00000400 // Return data as a 64 bit integer.
-	PDH_FMT_NOSCALE      = 0x00001000 // can be OR-ed: Do not apply the counter's default scaling factor.
-	PDH_FMT_1000         = 0x00002000 // can be OR-ed: multiply the actual value by 1,000.
-	PDH_FMT_NODATA       = 0x00004000 // can be OR-ed: unknown what this is for, MSDN says nothing.
-	PDH_FMT_NOCAP100     = 0x00008000 // can be OR-ed: do not cap values > 100.
+	FMT_RAW              = 0x00000010
+	FMT_ANSI             = 0x00000020
+	FMT_UNICODE          = 0x00000040
+	FMT_LONG             = 0x00000100 // Return data as a long int.
+	FMT_DOUBLE           = 0x00000200 // Return data as a double precision floating point real.
+	FMT_LARGE            = 0x00000400 // Return data as a 64 bit integer.
+	FMT_NOSCALE          = 0x00001000 // can be OR-ed: Do not apply the counter's default scaling factor.
+	FMT_1000             = 0x00002000 // can be OR-ed: multiply the actual value by 1,000.
+	FMT_NODATA           = 0x00004000 // can be OR-ed: unknown what this is for, MSDN says nothing.
+	FMT_NOCAP100         = 0x00008000 // can be OR-ed: do not cap values > 100.
 	PERF_DETAIL_COSTLY   = 0x00010000
 	PERF_DETAIL_STANDARD = 0x0000FFFF
 )
 
 type (
-	PDH_HQUERY   HANDLE // query handle
-	PDH_HCOUNTER HANDLE // counter handle
+	HQUERY   HANDLE // query handle
+	HCOUNTER HANDLE // counter handle
 )
 
 // For struct details, see https://learn.microsoft.com/en-us/windows/win32/api/pdh/ns-pdh-pdh_counter_info_w.
-type PDH_COUNTER_INFO struct {
+type COUNTER_INFO struct {
 	DwLength        uint32
 	DwType          uint32
 	CVersion        uint32
@@ -159,13 +158,13 @@ type PDH_COUNTER_INFO struct {
 	DwUserData      *uint32
 	DwQueryUserData *uint32
 	SzFullPath      *uint16 // pointer to a string
-	CounterPath     PDH_COUNTER_PATH_ELEMENTS
+	CounterPath     COUNTER_PATH_ELEMENTS
 	SzExplainText   *uint16 // pointer to a string
 	DataBuffer      *string
 }
 
 // For struct details, see https://learn.microsoft.com/en-us/windows/win32/api/pdh/ns-pdh-pdh_counter_path_elements_w.
-type PDH_COUNTER_PATH_ELEMENTS struct {
+type COUNTER_PATH_ELEMENTS struct {
 	SzMachineName    *uint16 // pointer to a string
 	SzObjectName     *uint16 // pointer to a string
 	SzInstanceName   *uint16 // pointer to a string
@@ -175,40 +174,40 @@ type PDH_COUNTER_PATH_ELEMENTS struct {
 }
 
 // Union specialization for double values
-type PDH_FMT_COUNTERVALUE_DOUBLE struct {
+type FMT_COUNTERVALUE_DOUBLE struct {
 	CStatus     uint32
 	DoubleValue float64
 }
 
 // Union specialization for 64 bit integer values
-type PDH_FMT_COUNTERVALUE_LARGE struct {
+type FMT_COUNTERVALUE_LARGE struct {
 	CStatus    uint32
 	LargeValue int64
 }
 
 // Union specialization for long values
-type PDH_FMT_COUNTERVALUE_LONG struct {
+type FMT_COUNTERVALUE_LONG struct {
 	CStatus   uint32
 	LongValue int32
 	padding   [4]byte
 }
 
-// Union specialization for double values, used by PdhGetFormattedCounterArrayDouble()
-type PDH_FMT_COUNTERVALUE_ITEM_DOUBLE struct {
+// Union specialization for double values, used by GetFormattedCounterArrayDouble()
+type FMT_COUNTERVALUE_ITEM_DOUBLE struct {
 	SzName   *uint16 // pointer to a string
-	FmtValue PDH_FMT_COUNTERVALUE_DOUBLE
+	FmtValue FMT_COUNTERVALUE_DOUBLE
 }
 
-// Union specialization for 'large' values, used by PdhGetFormattedCounterArrayLarge()
-type PDH_FMT_COUNTERVALUE_ITEM_LARGE struct {
+// Union specialization for 'large' values, used by GetFormattedCounterArrayLarge()
+type FMT_COUNTERVALUE_ITEM_LARGE struct {
 	SzName   *uint16 // pointer to a string
-	FmtValue PDH_FMT_COUNTERVALUE_LARGE
+	FmtValue FMT_COUNTERVALUE_LARGE
 }
 
-// Union specialization for long values, used by PdhGetFormattedCounterArrayLong()
-type PDH_FMT_COUNTERVALUE_ITEM_LONG struct {
+// Union specialization for long values, used by GetFormattedCounterArrayLong()
+type FMT_COUNTERVALUE_ITEM_LONG struct {
 	SzName   *uint16 // pointer to a string
-	FmtValue PDH_FMT_COUNTERVALUE_LONG
+	FmtValue FMT_COUNTERVALUE_LONG
 }
 
 var (
@@ -246,10 +245,10 @@ func init() {
 }
 
 // Adds the specified counter to the query. This is the internationalized version. Preferably, use the
-// function PdhAddEnglishCounter instead. hQuery is the query handle, which has been fetched by PdhOpenQuery.
+// function AddEnglishCounter instead. hQuery is the query handle, which has been fetched by OpenQuery.
 // szFullCounterPath is a full, internationalized counter path (this will differ per Windows language version).
 // dwUserData is a 'user-defined value', which becomes part of the counter information. To retrieve this value
-// later, call PdhGetCounterInfo() and access dwQueryUserData of the PDH_COUNTER_INFO structure.
+// later, call GetCounterInfo() and access dwQueryUserData of the COUNTER_INFO structure.
 //
 // Examples of szFullCounterPath (in an English version of Windows):
 //
@@ -283,7 +282,7 @@ func init() {
 // The typeperf command may also be pretty easy. To find all performance counters, simply execute:
 //
 //	typeperf -qx
-func PdhAddCounter(hQuery PDH_HQUERY, szFullCounterPath string, dwUserData uintptr, phCounter *PDH_HCOUNTER) uint32 {
+func AddCounter(hQuery HQUERY, szFullCounterPath string, dwUserData uintptr, phCounter *HCOUNTER) uint32 {
 	ptxt, _ := syscall.UTF16PtrFromString(szFullCounterPath)
 	ret, _, _ := pdh_AddCounterW.Call(
 		uintptr(hQuery),
@@ -294,9 +293,9 @@ func PdhAddCounter(hQuery PDH_HQUERY, szFullCounterPath string, dwUserData uintp
 	return uint32(ret)
 }
 
-// Adds the specified language-neutral counter to the query. See the PdhAddCounter function. This function only exists on
+// Adds the specified language-neutral counter to the query. See the AddCounter function. This function only exists on
 // Windows versions higher than Vista.
-func PdhAddEnglishCounter(hQuery PDH_HQUERY, szFullCounterPath string, dwUserData uintptr, phCounter *PDH_HCOUNTER) uint32 {
+func AddEnglishCounter(hQuery HQUERY, szFullCounterPath string, dwUserData uintptr, phCounter *HCOUNTER) uint32 {
 	if pdh_AddEnglishCounterW.Find() != nil {
 		return ERROR_INVALID_FUNCTION
 	}
@@ -313,7 +312,7 @@ func PdhAddEnglishCounter(hQuery PDH_HQUERY, szFullCounterPath string, dwUserDat
 
 // Closes all counters contained in the specified query, closes all handles related to the query,
 // and frees all memory associated with the query.
-func PdhCloseQuery(hQuery PDH_HQUERY) uint32 {
+func CloseQuery(hQuery HQUERY) uint32 {
 	ret, _, _ := pdh_CloseQuery.Call(uintptr(hQuery))
 
 	return uint32(ret)
@@ -321,26 +320,26 @@ func PdhCloseQuery(hQuery PDH_HQUERY) uint32 {
 
 // Collects the current raw data value for all counters in the specified query and updates the status
 // code of each counter. With some counters, this function needs to be repeatedly called before the value
-// of the counter can be extracted with PdhGetFormattedCounterValue(). For example, the following code
+// of the counter can be extracted with GetFormattedCounterValue(). For example, the following code
 // requires at least two calls:
 //
-//	var handle pdh.PDH_HQUERY
-//	var counterHandle pdh.PDH_HCOUNTER
-//	ret := pdh.PdhOpenQuery(0, 0, &handle)
-//	ret = pdh.PdhAddEnglishCounter(handle, "\\Processor(_Total)\\% Idle Time", 0, &counterHandle)
-//	var derp pdh.PDH_FMT_COUNTERVALUE_DOUBLE
+//	var handle pdh.HQUERY
+//	var counterHandle pdh.HCOUNTER
+//	ret := pdh.OpenQuery(0, 0, &handle)
+//	ret = pdh.AddEnglishCounter(handle, "\\Processor(_Total)\\% Idle Time", 0, &counterHandle)
+//	var derp pdh.FMT_COUNTERVALUE_DOUBLE
 //
-//	ret = pdh.PdhCollectQueryData(handle)
-//	fmt.Printf("Collect return code is %x\n", ret) // return code will be PDH_CSTATUS_INVALID_DATA
-//	ret = pdh.PdhGetFormattedCounterValueDouble(counterHandle, 0, &derp)
+//	ret = pdh.CollectQueryData(handle)
+//	fmt.Printf("Collect return code is %x\n", ret) // return code will be CSTATUS_INVALID_DATA
+//	ret = pdh.GetFormattedCounterValueDouble(counterHandle, 0, &derp)
 //
-//	ret = pdh.PdhCollectQueryData(handle)
+//	ret = pdh.CollectQueryData(handle)
 //	fmt.Printf("Collect return code is %x\n", ret) // return code will be ERROR_SUCCESS
-//	ret = pdh.PdhGetFormattedCounterValueDouble(counterHandle, 0, &derp)
+//	ret = pdh.GetFormattedCounterValueDouble(counterHandle, 0, &derp)
 //
-// The PdhCollectQueryData will return an error in the first call because it needs two values for
+// The CollectQueryData will return an error in the first call because it needs two values for
 // displaying the correct data for the processor idle time. The second call will have a 0 return code.
-func PdhCollectQueryData(hQuery PDH_HQUERY) uint32 {
+func CollectQueryData(hQuery HQUERY) uint32 {
 	ret, _, _ := pdh_CollectQueryData.Call(uintptr(hQuery))
 
 	return uint32(ret)
@@ -348,7 +347,7 @@ func PdhCollectQueryData(hQuery PDH_HQUERY) uint32 {
 
 // Examines the specified computer or log file and returns those counter paths that match the given counter path which contains wildcard characters.
 // For more information, see https://learn.microsoft.com/en-us/windows/win32/api/pdh/nf-pdh-pdhexpandwildcardpathw.
-func PdhExpandWildCardPath(szDataSource *uint16, szWildCardPath *uint16, mszExpandedPathList *uint16, pcchPathListLength *uint32, dwFlags *uint32) uint32 {
+func ExpandWildCardPath(szDataSource *uint16, szWildCardPath *uint16, mszExpandedPathList *uint16, pcchPathListLength *uint32, dwFlags *uint32) uint32 {
 	ret, _, _ := pdh_ExpandWildCardPath.Call(
 		uintptr(unsafe.Pointer(szDataSource)),
 		uintptr(unsafe.Pointer(szWildCardPath)),
@@ -361,7 +360,7 @@ func PdhExpandWildCardPath(szDataSource *uint16, szWildCardPath *uint16, mszExpa
 
 // Retrieves information about a counter, such as data size, counter type, path, and user-supplied data values.
 // For more information, see https://learn.microsoft.com/en-us/windows/win32/api/pdh/nf-pdh-pdhgetcounterinfow.
-func PdhGetCounterInfo(hCounter PDH_HCOUNTER, bRetrieveExplainText uintptr, pdwBufferSize *uint32, lpBuffer *PDH_COUNTER_INFO) uint32 {
+func GetCounterInfo(hCounter HCOUNTER, bRetrieveExplainText uintptr, pdwBufferSize *uint32, lpBuffer *COUNTER_INFO) uint32 {
 	ret, _, _ := pdh_GetCounterInfo.Call(
 		uintptr(hCounter),
 		bRetrieveExplainText,
@@ -373,10 +372,10 @@ func PdhGetCounterInfo(hCounter PDH_HCOUNTER, bRetrieveExplainText uintptr, pdwB
 
 // Formats the given hCounter using a 'double'. The result is set into the specialized union struct pValue.
 // This function does not directly translate to a Windows counterpart due to union specialization tricks.
-func PdhGetFormattedCounterValueDouble(hCounter PDH_HCOUNTER, lpdwType *uint32, pValue *PDH_FMT_COUNTERVALUE_DOUBLE) uint32 {
+func GetFormattedCounterValueDouble(hCounter HCOUNTER, lpdwType *uint32, pValue *FMT_COUNTERVALUE_DOUBLE) uint32 {
 	ret, _, _ := pdh_GetFormattedCounterValue.Call(
 		uintptr(hCounter),
-		uintptr(PDH_FMT_DOUBLE),
+		uintptr(FMT_DOUBLE),
 		uintptr(unsafe.Pointer(lpdwType)),
 		uintptr(unsafe.Pointer(pValue)))
 
@@ -385,10 +384,10 @@ func PdhGetFormattedCounterValueDouble(hCounter PDH_HCOUNTER, lpdwType *uint32, 
 
 // Formats the given hCounter using a large int (int64). The result is set into the specialized union struct pValue.
 // This function does not directly translate to a Windows counterpart due to union specialization tricks.
-func PdhGetFormattedCounterValueLarge(hCounter PDH_HCOUNTER, lpdwType *uint32, pValue *PDH_FMT_COUNTERVALUE_LARGE) uint32 {
+func GetFormattedCounterValueLarge(hCounter HCOUNTER, lpdwType *uint32, pValue *FMT_COUNTERVALUE_LARGE) uint32 {
 	ret, _, _ := pdh_GetFormattedCounterValue.Call(
 		uintptr(hCounter),
-		uintptr(PDH_FMT_LARGE),
+		uintptr(FMT_LARGE),
 		uintptr(unsafe.Pointer(lpdwType)),
 		uintptr(unsafe.Pointer(pValue)))
 
@@ -403,10 +402,10 @@ func PdhGetFormattedCounterValueLarge(hCounter PDH_HCOUNTER, lpdwType *uint32, p
 // bytes of the struct got the correct value. Until someone can figure out this behaviour, prefer to use
 // the Double or Large counterparts instead. These functions provide actually the same data, except in
 // a different, working format.
-func PdhGetFormattedCounterValueLong(hCounter PDH_HCOUNTER, lpdwType *uint32, pValue *PDH_FMT_COUNTERVALUE_LONG) uint32 {
+func GetFormattedCounterValueLong(hCounter HCOUNTER, lpdwType *uint32, pValue *FMT_COUNTERVALUE_LONG) uint32 {
 	ret, _, _ := pdh_GetFormattedCounterValue.Call(
 		uintptr(hCounter),
-		uintptr(PDH_FMT_LONG),
+		uintptr(FMT_LONG),
 		uintptr(unsafe.Pointer(lpdwType)),
 		uintptr(unsafe.Pointer(pValue)))
 
@@ -414,7 +413,7 @@ func PdhGetFormattedCounterValueLong(hCounter PDH_HCOUNTER, lpdwType *uint32, pV
 }
 
 // Returns an array of formatted counter values. Use this function when you want to format the counter values of a
-// counter that contains a wildcard character for the instance name. The itemBuffer must a slice of type PDH_FMT_COUNTERVALUE_ITEM_DOUBLE.
+// counter that contains a wildcard character for the instance name. The itemBuffer must a slice of type FMT_COUNTERVALUE_ITEM_DOUBLE.
 // An example of how this function can be used:
 //
 //	okPath := "\\Process(*)\\% Processor Time" // notice the wildcard * character
@@ -423,17 +422,17 @@ func PdhGetFormattedCounterValueLong(hCounter PDH_HCOUNTER, lpdwType *uint32, pV
 //
 //	var bufSize uint32
 //	var bufCount uint32
-//	var size uint32 = uint32(unsafe.Sizeof(pdh.PDH_FMT_COUNTERVALUE_ITEM_DOUBLE{}))
-//	var emptyBuf [1]pdh.PDH_FMT_COUNTERVALUE_ITEM_DOUBLE // need at least 1 addressable null ptr.
+//	var size uint32 = uint32(unsafe.Sizeof(pdh.FMT_COUNTERVALUE_ITEM_DOUBLE{}))
+//	var emptyBuf [1]pdh.FMT_COUNTERVALUE_ITEM_DOUBLE // need at least 1 addressable null ptr.
 //
 //	for {
 //		// collect
-//		ret := pdh.PdhCollectQueryData(queryHandle)
+//		ret := pdh.CollectQueryData(queryHandle)
 //		if ret == pdh.ERROR_SUCCESS {
-//			ret = pdh.PdhGetFormattedCounterArrayDouble(counterHandle, &bufSize, &bufCount, &emptyBuf[0]) // uses null ptr here according to MSDN.
-//			if ret == pdh.PDH_MORE_DATA {
-//				filledBuf := make([]pdh.PDH_FMT_COUNTERVALUE_ITEM_DOUBLE, bufCount*size)
-//				ret = pdh.PdhGetFormattedCounterArrayDouble(counterHandle, &bufSize, &bufCount, &filledBuf[0])
+//			ret = pdh.GetFormattedCounterArrayDouble(counterHandle, &bufSize, &bufCount, &emptyBuf[0]) // uses null ptr here according to MSDN.
+//			if ret == pdh.MORE_DATA {
+//				filledBuf := make([]pdh.FMT_COUNTERVALUE_ITEM_DOUBLE, bufCount*size)
+//				ret = pdh.GetFormattedCounterArrayDouble(counterHandle, &bufSize, &bufCount, &filledBuf[0])
 //				for i := 0; i < int(bufCount); i++ {
 //					c := filledBuf[i]
 //					var s string = pdh.UTF16PtrToString(c.SzName)
@@ -442,7 +441,7 @@ func PdhGetFormattedCounterValueLong(hCounter PDH_HCOUNTER, lpdwType *uint32, pV
 //
 //				filledBuf = nil
 //				// Need to at least set bufSize to zero, because if not, the function will not
-//				// return PDH_MORE_DATA and will not set the bufSize.
+//				// return MORE_DATA and will not set the bufSize.
 //				bufCount = 0
 //				bufSize = 0
 //			}
@@ -450,10 +449,10 @@ func PdhGetFormattedCounterValueLong(hCounter PDH_HCOUNTER, lpdwType *uint32, pV
 //			time.Sleep(2000 * time.Millisecond)
 //		}
 //	}
-func PdhGetFormattedCounterArrayDouble(hCounter PDH_HCOUNTER, lpdwBufferSize *uint32, lpdwBufferCount *uint32, itemBuffer *PDH_FMT_COUNTERVALUE_ITEM_DOUBLE) uint32 {
+func GetFormattedCounterArrayDouble(hCounter HCOUNTER, lpdwBufferSize *uint32, lpdwBufferCount *uint32, itemBuffer *FMT_COUNTERVALUE_ITEM_DOUBLE) uint32 {
 	ret, _, _ := pdh_GetFormattedCounterArrayW.Call(
 		uintptr(hCounter),
-		uintptr(PDH_FMT_DOUBLE),
+		uintptr(FMT_DOUBLE),
 		uintptr(unsafe.Pointer(lpdwBufferSize)),
 		uintptr(unsafe.Pointer(lpdwBufferCount)),
 		uintptr(unsafe.Pointer(itemBuffer)))
@@ -462,12 +461,12 @@ func PdhGetFormattedCounterArrayDouble(hCounter PDH_HCOUNTER, lpdwBufferSize *ui
 }
 
 // Returns an array of formatted counter values. Use this function when you want to format the counter values of a
-// counter that contains a wildcard character for the instance name. The itemBuffer must a slice of type PDH_FMT_COUNTERVALUE_ITEM_LARGE.
-// For an example usage, see PdhGetFormattedCounterArrayDouble.
-func PdhGetFormattedCounterArrayLarge(hCounter PDH_HCOUNTER, lpdwBufferSize *uint32, lpdwBufferCount *uint32, itemBuffer *PDH_FMT_COUNTERVALUE_ITEM_LARGE) uint32 {
+// counter that contains a wildcard character for the instance name. The itemBuffer must a slice of type FMT_COUNTERVALUE_ITEM_LARGE.
+// For an example usage, see GetFormattedCounterArrayDouble.
+func GetFormattedCounterArrayLarge(hCounter HCOUNTER, lpdwBufferSize *uint32, lpdwBufferCount *uint32, itemBuffer *FMT_COUNTERVALUE_ITEM_LARGE) uint32 {
 	ret, _, _ := pdh_GetFormattedCounterArrayW.Call(
 		uintptr(hCounter),
-		uintptr(PDH_FMT_LARGE),
+		uintptr(FMT_LARGE),
 		uintptr(unsafe.Pointer(lpdwBufferSize)),
 		uintptr(unsafe.Pointer(lpdwBufferCount)),
 		uintptr(unsafe.Pointer(itemBuffer)))
@@ -476,14 +475,14 @@ func PdhGetFormattedCounterArrayLarge(hCounter PDH_HCOUNTER, lpdwBufferSize *uin
 }
 
 // Returns an array of formatted counter values. Use this function when you want to format the counter values of a
-// counter that contains a wildcard character for the instance name. The itemBuffer must a slice of type PDH_FMT_COUNTERVALUE_ITEM_LONG.
-// For an example usage, see PdhGetFormattedCounterArrayDouble.
+// counter that contains a wildcard character for the instance name. The itemBuffer must a slice of type FMT_COUNTERVALUE_ITEM_LONG.
+// For an example usage, see GetFormattedCounterArrayDouble.
 //
-// BUG(krpors): See description of PdhGetFormattedCounterValueLong().
-func PdhGetFormattedCounterArrayLong(hCounter PDH_HCOUNTER, lpdwBufferSize *uint32, lpdwBufferCount *uint32, itemBuffer *PDH_FMT_COUNTERVALUE_ITEM_LONG) uint32 {
+// BUG(krpors): See description of GetFormattedCounterValueLong().
+func GetFormattedCounterArrayLong(hCounter HCOUNTER, lpdwBufferSize *uint32, lpdwBufferCount *uint32, itemBuffer *FMT_COUNTERVALUE_ITEM_LONG) uint32 {
 	ret, _, _ := pdh_GetFormattedCounterArrayW.Call(
 		uintptr(hCounter),
-		uintptr(PDH_FMT_LONG),
+		uintptr(FMT_LONG),
 		uintptr(unsafe.Pointer(lpdwBufferSize)),
 		uintptr(unsafe.Pointer(lpdwBufferCount)),
 		uintptr(unsafe.Pointer(itemBuffer)))
@@ -495,10 +494,10 @@ func PdhGetFormattedCounterArrayLong(hCounter PDH_HCOUNTER, lpdwBufferSize *uint
 // szDataSource is a null terminated string that specifies the name of the log file from which to
 // retrieve the performance data. If 0, performance data is collected from a real-time data source.
 // dwUserData is a user-defined value to associate with this query. To retrieve the user data later,
-// call PdhGetCounterInfo and access dwQueryUserData of the PDH_COUNTER_INFO structure. phQuery is
-// the handle to the query, and must be used in subsequent calls. This function returns a PDH_
+// call GetCounterInfo and access dwQueryUserData of the COUNTER_INFO structure. phQuery is
+// the handle to the query, and must be used in subsequent calls. This function returns a
 // constant error code, or ERROR_SUCCESS if the call succeeded.
-func PdhOpenQuery(szDataSource uintptr, dwUserData uintptr, phQuery *PDH_HQUERY) uint32 {
+func OpenQuery(szDataSource uintptr, dwUserData uintptr, phQuery *HQUERY) uint32 {
 	ret, _, _ := pdh_OpenQuery.Call(
 		szDataSource,
 		dwUserData,
@@ -507,9 +506,9 @@ func PdhOpenQuery(szDataSource uintptr, dwUserData uintptr, phQuery *PDH_HQUERY)
 	return uint32(ret)
 }
 
-// Validates a path. Will return ERROR_SUCCESS when ok, or PDH_CSTATUS_BAD_COUNTERNAME when the path is
+// Validates a path. Will return ERROR_SUCCESS when ok, or CSTATUS_BAD_COUNTERNAME when the path is
 // erroneous.
-func PdhValidatePath(path string) uint32 {
+func ValidatePath(path string) uint32 {
 	ptxt, _ := syscall.UTF16PtrFromString(path)
 	ret, _, _ := pdh_ValidatePathW.Call(uintptr(unsafe.Pointer(ptxt)))
 
