@@ -215,16 +215,16 @@ var (
 	libpdhDll *windows.LazyDLL
 
 	// Functions
-	pdh_AddCounterW               *windows.LazyProc
-	pdh_AddEnglishCounterW        *windows.LazyProc
-	pdh_CloseQuery                *windows.LazyProc
-	pdh_CollectQueryData          *windows.LazyProc
-	pdh_ExpandWildCardPath        *windows.LazyProc
-	pdh_GetCounterInfo            *windows.LazyProc
-	pdh_GetFormattedCounterValue  *windows.LazyProc
-	pdh_GetFormattedCounterArrayW *windows.LazyProc
-	pdh_OpenQuery                 *windows.LazyProc
-	pdh_ValidatePathW             *windows.LazyProc
+	addCounterW               *windows.LazyProc
+	addEnglishCounterW        *windows.LazyProc
+	closeQuery                *windows.LazyProc
+	collectQueryData          *windows.LazyProc
+	expandWildCardPath        *windows.LazyProc
+	getCounterInfo            *windows.LazyProc
+	getFormattedCounterValue  *windows.LazyProc
+	getFormattedCounterArrayW *windows.LazyProc
+	openQuery                 *windows.LazyProc
+	validatePathW             *windows.LazyProc
 )
 
 func init() {
@@ -232,16 +232,16 @@ func init() {
 	libpdhDll = windows.NewLazySystemDLL("pdh.dll")
 
 	// Functions
-	pdh_AddCounterW = libpdhDll.NewProc("PdhAddCounterW")
-	pdh_AddEnglishCounterW = libpdhDll.NewProc("PdhAddEnglishCounterW")
-	pdh_CloseQuery = libpdhDll.NewProc("PdhCloseQuery")
-	pdh_CollectQueryData = libpdhDll.NewProc("PdhCollectQueryData")
-	pdh_ExpandWildCardPath = libpdhDll.NewProc("PdhExpandWildCardPathW")
-	pdh_GetCounterInfo = libpdhDll.NewProc("PdhGetCounterInfoW")
-	pdh_GetFormattedCounterValue = libpdhDll.NewProc("PdhGetFormattedCounterValue")
-	pdh_GetFormattedCounterArrayW = libpdhDll.NewProc("PdhGetFormattedCounterArrayW")
-	pdh_OpenQuery = libpdhDll.NewProc("PdhOpenQuery")
-	pdh_ValidatePathW = libpdhDll.NewProc("PdhValidatePathW")
+	addCounterW = libpdhDll.NewProc("PdhAddCounterW")
+	addEnglishCounterW = libpdhDll.NewProc("PdhAddEnglishCounterW")
+	closeQuery = libpdhDll.NewProc("PdhCloseQuery")
+	collectQueryData = libpdhDll.NewProc("PdhCollectQueryData")
+	expandWildCardPath = libpdhDll.NewProc("PdhExpandWildCardPathW")
+	getCounterInfo = libpdhDll.NewProc("PdhGetCounterInfoW")
+	getFormattedCounterValue = libpdhDll.NewProc("PdhGetFormattedCounterValue")
+	getFormattedCounterArrayW = libpdhDll.NewProc("PdhGetFormattedCounterArrayW")
+	openQuery = libpdhDll.NewProc("PdhOpenQuery")
+	validatePathW = libpdhDll.NewProc("PdhValidatePathW")
 }
 
 // Adds the specified counter to the query. This is the internationalized version. Preferably, use the
@@ -284,7 +284,7 @@ func init() {
 //	typeperf -qx
 func AddCounter(hQuery HQUERY, szFullCounterPath string, dwUserData uintptr, phCounter *HCOUNTER) uint32 {
 	ptxt, _ := syscall.UTF16PtrFromString(szFullCounterPath)
-	ret, _, _ := pdh_AddCounterW.Call(
+	ret, _, _ := addCounterW.Call(
 		uintptr(hQuery),
 		uintptr(unsafe.Pointer(ptxt)),
 		dwUserData,
@@ -296,12 +296,12 @@ func AddCounter(hQuery HQUERY, szFullCounterPath string, dwUserData uintptr, phC
 // Adds the specified language-neutral counter to the query. See the AddCounter function. This function only exists on
 // Windows versions higher than Vista.
 func AddEnglishCounter(hQuery HQUERY, szFullCounterPath string, dwUserData uintptr, phCounter *HCOUNTER) uint32 {
-	if pdh_AddEnglishCounterW.Find() != nil {
+	if addEnglishCounterW.Find() != nil {
 		return ERROR_INVALID_FUNCTION
 	}
 
 	ptxt, _ := syscall.UTF16PtrFromString(szFullCounterPath)
-	ret, _, _ := pdh_AddEnglishCounterW.Call(
+	ret, _, _ := addEnglishCounterW.Call(
 		uintptr(hQuery),
 		uintptr(unsafe.Pointer(ptxt)),
 		dwUserData,
@@ -313,7 +313,7 @@ func AddEnglishCounter(hQuery HQUERY, szFullCounterPath string, dwUserData uintp
 // Closes all counters contained in the specified query, closes all handles related to the query,
 // and frees all memory associated with the query.
 func CloseQuery(hQuery HQUERY) uint32 {
-	ret, _, _ := pdh_CloseQuery.Call(uintptr(hQuery))
+	ret, _, _ := closeQuery.Call(uintptr(hQuery))
 
 	return uint32(ret)
 }
@@ -340,7 +340,7 @@ func CloseQuery(hQuery HQUERY) uint32 {
 // The CollectQueryData will return an error in the first call because it needs two values for
 // displaying the correct data for the processor idle time. The second call will have a 0 return code.
 func CollectQueryData(hQuery HQUERY) uint32 {
-	ret, _, _ := pdh_CollectQueryData.Call(uintptr(hQuery))
+	ret, _, _ := collectQueryData.Call(uintptr(hQuery))
 
 	return uint32(ret)
 }
@@ -348,7 +348,7 @@ func CollectQueryData(hQuery HQUERY) uint32 {
 // Examines the specified computer or log file and returns those counter paths that match the given counter path which contains wildcard characters.
 // For more information, see https://learn.microsoft.com/en-us/windows/win32/api/pdh/nf-pdh-pdhexpandwildcardpathw.
 func ExpandWildCardPath(szDataSource *uint16, szWildCardPath *uint16, mszExpandedPathList *uint16, pcchPathListLength *uint32, dwFlags *uint32) uint32 {
-	ret, _, _ := pdh_ExpandWildCardPath.Call(
+	ret, _, _ := expandWildCardPath.Call(
 		uintptr(unsafe.Pointer(szDataSource)),
 		uintptr(unsafe.Pointer(szWildCardPath)),
 		uintptr(unsafe.Pointer(mszExpandedPathList)),
@@ -361,7 +361,7 @@ func ExpandWildCardPath(szDataSource *uint16, szWildCardPath *uint16, mszExpande
 // Retrieves information about a counter, such as data size, counter type, path, and user-supplied data values.
 // For more information, see https://learn.microsoft.com/en-us/windows/win32/api/pdh/nf-pdh-pdhgetcounterinfow.
 func GetCounterInfo(hCounter HCOUNTER, bRetrieveExplainText uintptr, pdwBufferSize *uint32, lpBuffer *COUNTER_INFO) uint32 {
-	ret, _, _ := pdh_GetCounterInfo.Call(
+	ret, _, _ := getCounterInfo.Call(
 		uintptr(hCounter),
 		bRetrieveExplainText,
 		uintptr(unsafe.Pointer(pdwBufferSize)),
@@ -373,7 +373,7 @@ func GetCounterInfo(hCounter HCOUNTER, bRetrieveExplainText uintptr, pdwBufferSi
 // Formats the given hCounter using a 'double'. The result is set into the specialized union struct pValue.
 // This function does not directly translate to a Windows counterpart due to union specialization tricks.
 func GetFormattedCounterValueDouble(hCounter HCOUNTER, lpdwType *uint32, pValue *FMT_COUNTERVALUE_DOUBLE) uint32 {
-	ret, _, _ := pdh_GetFormattedCounterValue.Call(
+	ret, _, _ := getFormattedCounterValue.Call(
 		uintptr(hCounter),
 		uintptr(FMT_DOUBLE),
 		uintptr(unsafe.Pointer(lpdwType)),
@@ -385,7 +385,7 @@ func GetFormattedCounterValueDouble(hCounter HCOUNTER, lpdwType *uint32, pValue 
 // Formats the given hCounter using a large int (int64). The result is set into the specialized union struct pValue.
 // This function does not directly translate to a Windows counterpart due to union specialization tricks.
 func GetFormattedCounterValueLarge(hCounter HCOUNTER, lpdwType *uint32, pValue *FMT_COUNTERVALUE_LARGE) uint32 {
-	ret, _, _ := pdh_GetFormattedCounterValue.Call(
+	ret, _, _ := getFormattedCounterValue.Call(
 		uintptr(hCounter),
 		uintptr(FMT_LARGE),
 		uintptr(unsafe.Pointer(lpdwType)),
@@ -403,7 +403,7 @@ func GetFormattedCounterValueLarge(hCounter HCOUNTER, lpdwType *uint32, pValue *
 // the Double or Large counterparts instead. These functions provide actually the same data, except in
 // a different, working format.
 func GetFormattedCounterValueLong(hCounter HCOUNTER, lpdwType *uint32, pValue *FMT_COUNTERVALUE_LONG) uint32 {
-	ret, _, _ := pdh_GetFormattedCounterValue.Call(
+	ret, _, _ := getFormattedCounterValue.Call(
 		uintptr(hCounter),
 		uintptr(FMT_LONG),
 		uintptr(unsafe.Pointer(lpdwType)),
@@ -450,7 +450,7 @@ func GetFormattedCounterValueLong(hCounter HCOUNTER, lpdwType *uint32, pValue *F
 //		}
 //	}
 func GetFormattedCounterArrayDouble(hCounter HCOUNTER, lpdwBufferSize *uint32, lpdwBufferCount *uint32, itemBuffer *FMT_COUNTERVALUE_ITEM_DOUBLE) uint32 {
-	ret, _, _ := pdh_GetFormattedCounterArrayW.Call(
+	ret, _, _ := getFormattedCounterArrayW.Call(
 		uintptr(hCounter),
 		uintptr(FMT_DOUBLE),
 		uintptr(unsafe.Pointer(lpdwBufferSize)),
@@ -464,7 +464,7 @@ func GetFormattedCounterArrayDouble(hCounter HCOUNTER, lpdwBufferSize *uint32, l
 // counter that contains a wildcard character for the instance name. The itemBuffer must a slice of type FMT_COUNTERVALUE_ITEM_LARGE.
 // For an example usage, see GetFormattedCounterArrayDouble.
 func GetFormattedCounterArrayLarge(hCounter HCOUNTER, lpdwBufferSize *uint32, lpdwBufferCount *uint32, itemBuffer *FMT_COUNTERVALUE_ITEM_LARGE) uint32 {
-	ret, _, _ := pdh_GetFormattedCounterArrayW.Call(
+	ret, _, _ := getFormattedCounterArrayW.Call(
 		uintptr(hCounter),
 		uintptr(FMT_LARGE),
 		uintptr(unsafe.Pointer(lpdwBufferSize)),
@@ -480,7 +480,7 @@ func GetFormattedCounterArrayLarge(hCounter HCOUNTER, lpdwBufferSize *uint32, lp
 //
 // BUG(krpors): See description of GetFormattedCounterValueLong().
 func GetFormattedCounterArrayLong(hCounter HCOUNTER, lpdwBufferSize *uint32, lpdwBufferCount *uint32, itemBuffer *FMT_COUNTERVALUE_ITEM_LONG) uint32 {
-	ret, _, _ := pdh_GetFormattedCounterArrayW.Call(
+	ret, _, _ := getFormattedCounterArrayW.Call(
 		uintptr(hCounter),
 		uintptr(FMT_LONG),
 		uintptr(unsafe.Pointer(lpdwBufferSize)),
@@ -498,7 +498,7 @@ func GetFormattedCounterArrayLong(hCounter HCOUNTER, lpdwBufferSize *uint32, lpd
 // the handle to the query, and must be used in subsequent calls. This function returns a
 // constant error code, or ERROR_SUCCESS if the call succeeded.
 func OpenQuery(szDataSource uintptr, dwUserData uintptr, phQuery *HQUERY) uint32 {
-	ret, _, _ := pdh_OpenQuery.Call(
+	ret, _, _ := openQuery.Call(
 		szDataSource,
 		dwUserData,
 		uintptr(unsafe.Pointer(phQuery)))
@@ -510,7 +510,7 @@ func OpenQuery(szDataSource uintptr, dwUserData uintptr, phQuery *HQUERY) uint32
 // erroneous.
 func ValidatePath(path string) uint32 {
 	ptxt, _ := syscall.UTF16PtrFromString(path)
-	ret, _, _ := pdh_ValidatePathW.Call(uintptr(unsafe.Pointer(ptxt)))
+	ret, _, _ := validatePathW.Call(uintptr(unsafe.Pointer(ptxt)))
 
 	return uint32(ret)
 }
