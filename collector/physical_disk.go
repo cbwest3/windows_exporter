@@ -315,7 +315,6 @@ func NewPhysicalDiskCollector() (Collector, error) {
 			metric.PdhMetrics = append(metric.PdhMetrics, &pdhMetric)
 		}
 	}
-	fmt.Printf("pdc.PromMetrics: %s\n", pdc.PromMetrics)
 
 	// TODO (cbwest): Figure out where this should live.
 	ret := pdh.CollectQueryData(*pdc.PdhQuery)
