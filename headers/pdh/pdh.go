@@ -143,8 +143,8 @@ const (
 )
 
 type (
-	HQUERY   HANDLE // query handle
-	HCOUNTER HANDLE // counter handle
+	HQUERY   uintptr // query handle
+	HCOUNTER uintptr // counter handle
 )
 
 // For struct details, see https://learn.microsoft.com/en-us/windows/win32/api/pdh/ns-pdh-pdh_counter_info_w.
