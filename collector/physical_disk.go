@@ -43,7 +43,7 @@ var (
 // A PhysicalDiskCollector is a Prometheus collector for PhysicalDisk metrics gathered with PDH.
 type PhysicalDiskCollector struct {
 	PromMetrics []*PrometheusMetricMap
-	PdhQuery    *pdh.PDH_HQUERY
+	PdhQuery    *pdh.HQUERY
 }
 
 // Map a single Prometheus metric, e.g. read_latency_seconds_total, to one or
@@ -57,14 +57,14 @@ type PrometheusMetricMap struct {
 }
 
 type PdhMetricMap struct {
-	CounterHandle pdh.PDH_HCOUNTER
+	CounterHandle pdh.HCOUNTER
 	DiskNumber    string
 }
 
 // NewPhysicalDiskCollector ...
 func NewPhysicalDiskCollector() (Collector, error) {
 	const subsystem = "physical_disk"
-	var queryHandle pdh.PDH_HQUERY
+	var queryHandle pdh.HQUERY
 	if ret := pdh.OpenQuery(0, 0, &queryHandle); ret != 0 {
 		fmt.Printf("ERROR: PdhOpenQuery return code is 0x%X\n", ret)
 	}
@@ -72,7 +72,7 @@ func NewPhysicalDiskCollector() (Collector, error) {
 
 	// Queue length.
 	pdc.PromMetrics = append(pdc.PromMetrics, &PrometheusMetricMap{
-		PdhCounterType: pdh.PDH_FMT_DOUBLE,
+		PdhCounterType: pdh.FMT_DOUBLE,
 		PdhPath:        "\\physicaldisk(*)\\current disk queue length",
 		PromDesc: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "current_queue_length"),
@@ -82,7 +82,7 @@ func NewPhysicalDiskCollector() (Collector, error) {
 		),
 		PromValueType: prometheus.GaugeValue})
 	pdc.PromMetrics = append(pdc.PromMetrics, &PrometheusMetricMap{
-		PdhCounterType: pdh.PDH_FMT_DOUBLE,
+		PdhCounterType: pdh.FMT_DOUBLE,
 		PdhPath:        "\\physicaldisk(*)\\avg. disk queue length",
 		PromDesc: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "average_queue_length"),
@@ -92,7 +92,7 @@ func NewPhysicalDiskCollector() (Collector, error) {
 		),
 		PromValueType: prometheus.GaugeValue})
 	pdc.PromMetrics = append(pdc.PromMetrics, &PrometheusMetricMap{
-		PdhCounterType: pdh.PDH_FMT_DOUBLE,
+		PdhCounterType: pdh.FMT_DOUBLE,
 		PdhPath:        "\\physicaldisk(*)\\avg. disk read queue length",
 		PromDesc: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "read_average_queue_length"),
@@ -102,7 +102,7 @@ func NewPhysicalDiskCollector() (Collector, error) {
 		),
 		PromValueType: prometheus.GaugeValue})
 	pdc.PromMetrics = append(pdc.PromMetrics, &PrometheusMetricMap{
-		PdhCounterType: pdh.PDH_FMT_DOUBLE,
+		PdhCounterType: pdh.FMT_DOUBLE,
 		PdhPath:        "\\physicaldisk(*)\\avg. disk write queue length",
 		PromDesc: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "write_average_queue_length"),
@@ -114,7 +114,7 @@ func NewPhysicalDiskCollector() (Collector, error) {
 
 	// Device utilization.
 	pdc.PromMetrics = append(pdc.PromMetrics, &PrometheusMetricMap{
-		PdhCounterType: pdh.PDH_FMT_DOUBLE,
+		PdhCounterType: pdh.FMT_DOUBLE,
 		PdhPath:        "\\physicaldisk(*)\\% idle time",
 		PromDesc: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "time_idle_percent"),
@@ -124,7 +124,7 @@ func NewPhysicalDiskCollector() (Collector, error) {
 		),
 		PromValueType: prometheus.GaugeValue})
 	pdc.PromMetrics = append(pdc.PromMetrics, &PrometheusMetricMap{
-		PdhCounterType: pdh.PDH_FMT_DOUBLE,
+		PdhCounterType: pdh.FMT_DOUBLE,
 		PdhPath:        "\\physicaldisk(*)\\% disk read time",
 		PromDesc: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "time_read_percent"),
@@ -134,7 +134,7 @@ func NewPhysicalDiskCollector() (Collector, error) {
 		),
 		PromValueType: prometheus.GaugeValue})
 	pdc.PromMetrics = append(pdc.PromMetrics, &PrometheusMetricMap{
-		PdhCounterType: pdh.PDH_FMT_DOUBLE,
+		PdhCounterType: pdh.FMT_DOUBLE,
 		PdhPath:        "\\physicaldisk(*)\\% disk write time",
 		PromDesc: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "time_write_percent"),
@@ -144,7 +144,7 @@ func NewPhysicalDiskCollector() (Collector, error) {
 		),
 		PromValueType: prometheus.GaugeValue})
 	pdc.PromMetrics = append(pdc.PromMetrics, &PrometheusMetricMap{
-		PdhCounterType: pdh.PDH_FMT_DOUBLE,
+		PdhCounterType: pdh.FMT_DOUBLE,
 		PdhPath:        "\\physicaldisk(*)\\% disk time",
 		PromDesc: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "time_busy_percent"),
@@ -156,7 +156,7 @@ func NewPhysicalDiskCollector() (Collector, error) {
 
 	// Latency.
 	pdc.PromMetrics = append(pdc.PromMetrics, &PrometheusMetricMap{
-		PdhCounterType: pdh.PDH_FMT_DOUBLE,
+		PdhCounterType: pdh.FMT_DOUBLE,
 		PdhPath:        "\\physicaldisk(*)\\avg. disk sec/read",
 		PromDesc: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "read_latency_average_seconds"),
@@ -166,7 +166,7 @@ func NewPhysicalDiskCollector() (Collector, error) {
 		),
 		PromValueType: prometheus.GaugeValue})
 	pdc.PromMetrics = append(pdc.PromMetrics, &PrometheusMetricMap{
-		PdhCounterType: pdh.PDH_FMT_DOUBLE,
+		PdhCounterType: pdh.FMT_DOUBLE,
 		PdhPath:        "\\physicaldisk(*)\\avg. disk sec/transfer",
 		PromDesc: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "transfer_latency_average_seconds"),
@@ -176,7 +176,7 @@ func NewPhysicalDiskCollector() (Collector, error) {
 		),
 		PromValueType: prometheus.GaugeValue})
 	pdc.PromMetrics = append(pdc.PromMetrics, &PrometheusMetricMap{
-		PdhCounterType: pdh.PDH_FMT_DOUBLE,
+		PdhCounterType: pdh.FMT_DOUBLE,
 		PdhPath:        "\\physicaldisk(*)\\avg. disk sec/write",
 		PromDesc: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "write_latency_average_seconds"),
@@ -188,7 +188,7 @@ func NewPhysicalDiskCollector() (Collector, error) {
 
 	// Ops.
 	pdc.PromMetrics = append(pdc.PromMetrics, &PrometheusMetricMap{
-		PdhCounterType: pdh.PDH_FMT_DOUBLE,
+		PdhCounterType: pdh.FMT_DOUBLE,
 		PdhPath:        "\\physicaldisk(*)\\disk reads/sec",
 		PromDesc: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "reads_per_second"),
@@ -198,7 +198,7 @@ func NewPhysicalDiskCollector() (Collector, error) {
 		),
 		PromValueType: prometheus.GaugeValue})
 	pdc.PromMetrics = append(pdc.PromMetrics, &PrometheusMetricMap{
-		PdhCounterType: pdh.PDH_FMT_DOUBLE,
+		PdhCounterType: pdh.FMT_DOUBLE,
 		PdhPath:        "\\physicaldisk(*)\\split io/sec",
 		PromDesc: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "split_io_per_second"),
@@ -208,7 +208,7 @@ func NewPhysicalDiskCollector() (Collector, error) {
 		),
 		PromValueType: prometheus.GaugeValue})
 	pdc.PromMetrics = append(pdc.PromMetrics, &PrometheusMetricMap{
-		PdhCounterType: pdh.PDH_FMT_DOUBLE,
+		PdhCounterType: pdh.FMT_DOUBLE,
 		PdhPath:        "\\physicaldisk(*)\\disk transfers/sec",
 		PromDesc: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "transfers_per_second"),
@@ -218,7 +218,7 @@ func NewPhysicalDiskCollector() (Collector, error) {
 		),
 		PromValueType: prometheus.GaugeValue})
 	pdc.PromMetrics = append(pdc.PromMetrics, &PrometheusMetricMap{
-		PdhCounterType: pdh.PDH_FMT_DOUBLE,
+		PdhCounterType: pdh.FMT_DOUBLE,
 		PdhPath:        "\\physicaldisk(*)\\disk writes/sec",
 		PromDesc: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "writes_per_second"),
@@ -230,7 +230,7 @@ func NewPhysicalDiskCollector() (Collector, error) {
 
 	// Op sizes.
 	pdc.PromMetrics = append(pdc.PromMetrics, &PrometheusMetricMap{
-		PdhCounterType: pdh.PDH_FMT_DOUBLE,
+		PdhCounterType: pdh.FMT_DOUBLE,
 		PdhPath:        "\\physicaldisk(*)\\avg. disk bytes/read",
 		PromDesc: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "read_average_bytes"),
@@ -240,7 +240,7 @@ func NewPhysicalDiskCollector() (Collector, error) {
 		),
 		PromValueType: prometheus.GaugeValue})
 	pdc.PromMetrics = append(pdc.PromMetrics, &PrometheusMetricMap{
-		PdhCounterType: pdh.PDH_FMT_DOUBLE,
+		PdhCounterType: pdh.FMT_DOUBLE,
 		PdhPath:        "\\physicaldisk(*)\\avg. disk bytes/write",
 		PromDesc: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "write_average_bytes"),
@@ -250,7 +250,7 @@ func NewPhysicalDiskCollector() (Collector, error) {
 		),
 		PromValueType: prometheus.GaugeValue})
 	pdc.PromMetrics = append(pdc.PromMetrics, &PrometheusMetricMap{
-		PdhCounterType: pdh.PDH_FMT_DOUBLE,
+		PdhCounterType: pdh.FMT_DOUBLE,
 		PdhPath:        "\\physicaldisk(*)\\avg. disk bytes/transfer",
 		PromDesc: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "transfer_average_bytes"),
@@ -262,7 +262,7 @@ func NewPhysicalDiskCollector() (Collector, error) {
 
 	// Throughput.
 	pdc.PromMetrics = append(pdc.PromMetrics, &PrometheusMetricMap{
-		PdhCounterType: pdh.PDH_FMT_DOUBLE,
+		PdhCounterType: pdh.FMT_DOUBLE,
 		PdhPath:        "\\physicaldisk(*)\\disk bytes/sec",
 		PromDesc: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "bytes_per_second"),
@@ -272,7 +272,7 @@ func NewPhysicalDiskCollector() (Collector, error) {
 		),
 		PromValueType: prometheus.GaugeValue})
 	pdc.PromMetrics = append(pdc.PromMetrics, &PrometheusMetricMap{
-		PdhCounterType: pdh.PDH_FMT_DOUBLE,
+		PdhCounterType: pdh.FMT_DOUBLE,
 		PdhPath:        "\\physicaldisk(*)\\disk read bytes/sec",
 		PromDesc: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "read_bytes_per_second"),
@@ -282,7 +282,7 @@ func NewPhysicalDiskCollector() (Collector, error) {
 		),
 		PromValueType: prometheus.GaugeValue})
 	pdc.PromMetrics = append(pdc.PromMetrics, &PrometheusMetricMap{
-		PdhCounterType: pdh.PDH_FMT_DOUBLE,
+		PdhCounterType: pdh.FMT_DOUBLE,
 		PdhPath:        "\\physicaldisk(*)\\disk write bytes/sec",
 		PromDesc: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "write_bytes_per_second"),
@@ -301,9 +301,9 @@ func NewPhysicalDiskCollector() (Collector, error) {
 			continue
 		}
 		for index, path := range paths {
-			var pdhCounterHandle pdh.PDH_HCOUNTER
+			var pdhCounterHandle pdh.HCOUNTER
 			ret := pdh.AddCounter(queryHandle, path, userData, &pdhCounterHandle)
-			if ret != pdh.PDH_CSTATUS_VALID_DATA {
+			if ret != pdh.CSTATUS_VALID_DATA {
 				fmt.Printf("ERROR: Failed to add expanded counter '%s': %s (0x%X)\n", path, pdh.PDHErrors[ret], ret)
 				continue
 			}
@@ -319,7 +319,7 @@ func NewPhysicalDiskCollector() (Collector, error) {
 
 	// TODO (cbwest): Figure out where this should live.
 	ret := pdh.CollectQueryData(*pdc.PdhQuery)
-	if ret != pdh.PDH_CSTATUS_VALID_DATA { // Error checking
+	if ret != pdh.CSTATUS_VALID_DATA { // Error checking
 		fmt.Printf("ERROR: Initial PdhCollectQueryData return code is %s (0x%X)\n", pdh.PDHErrors[ret], ret)
 	}
 
@@ -356,19 +356,19 @@ func (c *PhysicalDiskCollector) collect(ctx *ScrapeContext, ch chan<- prometheus
 	//		- Be smart enough to query disks, and if any were added/removed, re-enumerate.
 
 	ret := pdh.CollectQueryData(*c.PdhQuery)
-	if ret != pdh.PDH_CSTATUS_VALID_DATA { // Error checking
+	if ret != pdh.CSTATUS_VALID_DATA { // Error checking
 		fmt.Printf("ERROR: First PdhCollectQueryData return code is %s (0x%X)\n", pdh.PDHErrors[ret], ret)
 	}
 
 	for _, metric := range c.PromMetrics {
 		//fmt.Printf("%s has CounterHandles: %s\n", metric.PromDesc, metric.PdhMetrics)
 		for _, pdhMetric := range metric.PdhMetrics {
-			var counter pdh.PDH_FMT_COUNTERVALUE_DOUBLE
+			var counter pdh.FMT_COUNTERVALUE_DOUBLE
 			ret = pdh.GetFormattedCounterValueDouble(pdhMetric.CounterHandle, &metric.PdhCounterType, &counter)
-			if ret != pdh.PDH_CSTATUS_VALID_DATA { // Error checking
+			if ret != pdh.CSTATUS_VALID_DATA { // Error checking
 				fmt.Printf("ERROR: Second PdhGetFormattedCounterValueDouble return code is %s (0x%X)\n", pdh.PDHErrors[ret], ret)
 			}
-			if counter.CStatus != pdh.PDH_CSTATUS_VALID_DATA { // Error checking
+			if counter.CStatus != pdh.CSTATUS_VALID_DATA { // Error checking
 				fmt.Printf("ERROR: Second CStatus is %s (0x%X)\n", pdh.PDHErrors[counter.CStatus], counter.CStatus)
 			}
 			//fmt.Printf("metric.DiskNumber=%s, counter.DoubleValue=%f\n", pdhMetric.DiskNumber, counter.DoubleValue)
