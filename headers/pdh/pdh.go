@@ -661,7 +661,9 @@ func LocalizeAndExpandCounter(pdhQuery HQUERY, path string) (paths []string, ins
 	var expandedPath string = ""
 	for i := 0; i < int(pathListLength); i += len(expandedPath) + 1 {
 		expandedPath = windows.UTF16PtrToString(&expandedPathList[i])
+		fmt.Printf("Beginning to parse expanded counter path: '%s'\n", expandedPath)
 		if len(expandedPath) < 1 { // expandedPathList has two nulls at the end.
+			fmt.Printf("Expanded counter path length is less than 1, skipping.\n")
 			continue
 		}
 
@@ -669,17 +671,18 @@ func LocalizeAndExpandCounter(pdhQuery HQUERY, path string) (paths []string, ins
 		instanceStartIndex := strings.Index(expandedPath, "(")
 		instanceEndIndex := strings.Index(expandedPath, ")")
 		if instanceStartIndex < 0 || instanceEndIndex < 0 {
-			fmt.Printf("Unable to parse PDH counter instance from '%s'", path)
+			fmt.Printf("Unable to parse PDH counter instance from '%s'\n", expandedPath)
 			continue
 		}
 		instance := expandedPath[instanceStartIndex+1 : instanceEndIndex]
 
 		if instance == "_Total" { // Skip the _Total instance. That is for users to compute.
+			fmt.Printf("Skipping instance: '_Total'\n")
 			continue
 		}
 		paths = append(paths, expandedPath)
 		instances = append(instances, instance)
-		fmt.Printf("Expanded %s to %s\n", path, paths)
+		fmt.Printf("Expanded '%s' to\n\tpath:\t\t'%s'\n\tinstance:\t'%s'\n", path, expandedPath, instance)
 	}
 	return paths, instances, nil
 }
