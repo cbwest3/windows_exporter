@@ -65,7 +65,7 @@ type PdhMetricMap struct {
 func NewPhysicalDiskCollector() (Collector, error) {
 	const subsystem = "physical_disk"
 	var queryHandle pdh.PDH_HQUERY
-	if ret := pdh.PdhOpenQuery(0, 0, &queryHandle); ret != 0 {
+	if ret := pdh.OpenQuery(0, 0, &queryHandle); ret != 0 {
 		fmt.Printf("ERROR: PdhOpenQuery return code is 0x%X\n", ret)
 	}
 	var pdc = PhysicalDiskCollector{PdhQuery: &queryHandle}
@@ -302,7 +302,7 @@ func NewPhysicalDiskCollector() (Collector, error) {
 		}
 		for index, path := range paths {
 			var pdhCounterHandle pdh.PDH_HCOUNTER
-			ret := pdh.PdhAddCounter(queryHandle, path, userData, &pdhCounterHandle)
+			ret := pdh.AddCounter(queryHandle, path, userData, &pdhCounterHandle)
 			if ret != pdh.PDH_CSTATUS_VALID_DATA {
 				fmt.Printf("ERROR: Failed to add expanded counter '%s': %s (0x%X)\n", path, pdh.PDHErrors[ret], ret)
 				continue
@@ -318,7 +318,7 @@ func NewPhysicalDiskCollector() (Collector, error) {
 	fmt.Printf("pdc.PromMetrics: %s\n", pdc.PromMetrics)
 
 	// TODO (cbwest): Figure out where this should live.
-	ret := pdh.PdhCollectQueryData(*pdc.PdhQuery)
+	ret := pdh.CollectQueryData(*pdc.PdhQuery)
 	if ret != pdh.PDH_CSTATUS_VALID_DATA { // Error checking
 		fmt.Printf("ERROR: Initial PdhCollectQueryData return code is %s (0x%X)\n", pdh.PDHErrors[ret], ret)
 	}
@@ -355,7 +355,7 @@ func (c *PhysicalDiskCollector) collect(ctx *ScrapeContext, ch chan<- prometheus
 	//		- Allow users to blacklist disks.
 	//		- Be smart enough to query disks, and if any were added/removed, re-enumerate.
 
-	ret := pdh.PdhCollectQueryData(*c.PdhQuery)
+	ret := pdh.CollectQueryData(*c.PdhQuery)
 	if ret != pdh.PDH_CSTATUS_VALID_DATA { // Error checking
 		fmt.Printf("ERROR: First PdhCollectQueryData return code is %s (0x%X)\n", pdh.PDHErrors[ret], ret)
 	}
@@ -364,7 +364,7 @@ func (c *PhysicalDiskCollector) collect(ctx *ScrapeContext, ch chan<- prometheus
 		//fmt.Printf("%s has CounterHandles: %s\n", metric.PromDesc, metric.PdhMetrics)
 		for _, pdhMetric := range metric.PdhMetrics {
 			var counter pdh.PDH_FMT_COUNTERVALUE_DOUBLE
-			ret = pdh.PdhGetFormattedCounterValueDouble(pdhMetric.CounterHandle, &metric.PdhCounterType, &counter)
+			ret = pdh.GetFormattedCounterValueDouble(pdhMetric.CounterHandle, &metric.PdhCounterType, &counter)
 			if ret != pdh.PDH_CSTATUS_VALID_DATA { // Error checking
 				fmt.Printf("ERROR: Second PdhGetFormattedCounterValueDouble return code is %s (0x%X)\n", pdh.PDHErrors[ret], ret)
 			}
