@@ -304,7 +304,7 @@ func NewPhysicalDiskCollector() (Collector, error) {
 			var pdhCounterHandle pdh.HCOUNTER
 			ret := pdh.AddCounter(queryHandle, path, userData, &pdhCounterHandle)
 			if ret != pdh.CSTATUS_VALID_DATA {
-				fmt.Printf("ERROR: Failed to add expanded counter '%s': %s (0x%X)\n", path, pdh.PDHErrors[ret], ret)
+				fmt.Printf("ERROR: Failed to add expanded counter '%s': %s (0x%X)\n", path, pdh.Errors[ret], ret)
 				continue
 			}
 
@@ -320,7 +320,7 @@ func NewPhysicalDiskCollector() (Collector, error) {
 	// TODO (cbwest): Figure out where this should live.
 	ret := pdh.CollectQueryData(*pdc.PdhQuery)
 	if ret != pdh.CSTATUS_VALID_DATA { // Error checking
-		fmt.Printf("ERROR: Initial PdhCollectQueryData return code is %s (0x%X)\n", pdh.PDHErrors[ret], ret)
+		fmt.Printf("ERROR: Initial PdhCollectQueryData return code is %s (0x%X)\n", pdh.Errors[ret], ret)
 	}
 
 	return &pdc, nil
@@ -357,7 +357,7 @@ func (c *PhysicalDiskCollector) collect(ctx *ScrapeContext, ch chan<- prometheus
 
 	ret := pdh.CollectQueryData(*c.PdhQuery)
 	if ret != pdh.CSTATUS_VALID_DATA { // Error checking
-		fmt.Printf("ERROR: First PdhCollectQueryData return code is %s (0x%X)\n", pdh.PDHErrors[ret], ret)
+		fmt.Printf("ERROR: First PdhCollectQueryData return code is %s (0x%X)\n", pdh.Errors[ret], ret)
 	}
 
 	for _, metric := range c.PromMetrics {
@@ -366,10 +366,10 @@ func (c *PhysicalDiskCollector) collect(ctx *ScrapeContext, ch chan<- prometheus
 			var counter pdh.FMT_COUNTERVALUE_DOUBLE
 			ret = pdh.GetFormattedCounterValueDouble(pdhMetric.CounterHandle, &metric.PdhCounterType, &counter)
 			if ret != pdh.CSTATUS_VALID_DATA { // Error checking
-				fmt.Printf("ERROR: Second PdhGetFormattedCounterValueDouble return code is %s (0x%X)\n", pdh.PDHErrors[ret], ret)
+				fmt.Printf("ERROR: Second PdhGetFormattedCounterValueDouble return code is %s (0x%X)\n", pdh.Errors[ret], ret)
 			}
 			if counter.CStatus != pdh.CSTATUS_VALID_DATA { // Error checking
-				fmt.Printf("ERROR: Second CStatus is %s (0x%X)\n", pdh.PDHErrors[counter.CStatus], counter.CStatus)
+				fmt.Printf("ERROR: Second CStatus is %s (0x%X)\n", pdh.Errors[counter.CStatus], counter.CStatus)
 			}
 			//fmt.Printf("metric.DiskNumber=%s, counter.DoubleValue=%f\n", pdhMetric.DiskNumber, counter.DoubleValue)
 			ch <- prometheus.MustNewConstMetric(
