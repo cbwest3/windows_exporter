@@ -36,6 +36,12 @@ import (
 	"unsafe"
 )
 
+// Windows error codes from https://learn.microsoft.com/en-us/windows/win32/debug/system-error-codes--0-499-
+const (
+	ERROR_SUCCESS          = 0x0 // The operation completed successfully.
+	ERROR_INVALID_FUNCTION = 0x1 // Incorrect function.
+)
+
 // PDH error codes, which can be returned by all pdh.* functions. Taken from mingw-w64 pdhmsg.h
 const (
 	CSTATUS_VALID_DATA                     = 0x00000000 // The returned data is valid.
