@@ -31,7 +31,9 @@
 package pdh
 
 import (
+	"fmt"
 	"golang.org/x/sys/windows"
+	"strings"
 	"syscall"
 	"unsafe"
 )
@@ -238,7 +240,6 @@ var Errors = map[uint32]string{
 	SQL_ALTER_DETAIL_FAILED:                "PDH_SQL_ALTER_DETAIL_FAILED",
 	QUERY_PERF_DATA_TIMEOUT:                "PDH_QUERY_PERF_DATA_TIMEOUT",
 }
-
 
 type (
 	HQUERY   uintptr // query handle
@@ -611,4 +612,72 @@ func ValidatePath(path string) uint32 {
 	ret, _, _ := validatePathW.Call(uintptr(unsafe.Pointer(ptxt)))
 
 	return uint32(ret)
+}
+
+// TODO (cbwest): Do proper error handling.
+func LocalizeAndExpandCounter(pdhQuery HQUERY, path string) (paths []string, instances []string, err error) {
+	var counterHandle HCOUNTER
+	var ret = AddEnglishCounter(pdhQuery, path, 0, &counterHandle)
+	if ret != CSTATUS_VALID_DATA { // Error checking
+		fmt.Printf("ERROR: AddEnglishCounter return code is %s (0x%X)\n",
+			Errors[ret], ret)
+	}
+
+	// Call GetCounterInfo twice to get buffer size, per
+	// https://learn.microsoft.com/en-us/windows/win32/api/pdh/nf-pdh-pdhgetcounterinfoa#remarks.
+	var bufSize uint32 = 0
+	var retrieveExplainText uint32 = 0
+	ret = GetCounterInfo(counterHandle, uintptr(retrieveExplainText), &bufSize, nil)
+	if ret != MORE_DATA { // error checking
+		fmt.Printf("ERROR: First GetCounterInfo return code is %s (0x%X)\n", Errors[ret], ret)
+	}
+
+	var counterInfo COUNTER_INFO
+	ret = GetCounterInfo(counterHandle, uintptr(retrieveExplainText), &bufSize, &counterInfo)
+	if ret != CSTATUS_VALID_DATA { // error checking
+		fmt.Printf("ERROR: Second GetCounterInfo return code is %s (0x%X)\n", Errors[ret], ret)
+	}
+
+	// Call ExpandWildCardPath twice, per
+	// https://learn.microsoft.com/en-us/windows/win32/api/pdh/nf-pdh-pdhexpandwildcardpathha#remarks.
+	var flags uint32 = 0
+	var pathListLength uint32 = 0
+	ret = ExpandWildCardPath(nullPtr, counterInfo.SzFullPath, nullPtr, &pathListLength, &flags)
+	if ret != MORE_DATA { // error checking
+		fmt.Printf("ERROR: First ExpandWildCardPath return code is %s (0x%X)\n", Errors[ret], ret)
+	}
+	if pathListLength < 1 {
+		fmt.Printf("ERROR: SOMETHING IS WRONG. pathListLength < 1, is %d.\n", pathListLength)
+	}
+
+	expandedPathList := make([]uint16, pathListLength)
+	ret = ExpandWildCardPath(nullPtr, counterInfo.SzFullPath, &expandedPathList[0], &pathListLength, &flags)
+	if ret != CSTATUS_VALID_DATA { // error checking
+		fmt.Printf("ERROR: Second ExpandWildCardPath return code is %s (0x%X)\n", Errors[ret], ret)
+	}
+
+	var expandedPath string = ""
+	for i := 0; i < int(pathListLength); i += len(expandedPath) + 1 {
+		expandedPath = windows.UTF16PtrToString(&expandedPathList[i])
+		if len(expandedPath) < 1 { // expandedPathList has two nulls at the end.
+			continue
+		}
+
+		// Parse PDH instance from the expanded counter path.
+		instanceStartIndex := strings.Index(expandedPath, "(")
+		instanceEndIndex := strings.Index(expandedPath, ")")
+		if instanceStartIndex < 0 || instanceEndIndex < 0 {
+			fmt.Printf("Unable to parse PDH counter instance from '%s'", path)
+			continue
+		}
+		instance := expandedPath[instanceStartIndex+1 : instanceEndIndex]
+
+		if instance == "_Total" { // Skip the _Total instance. That is for users to compute.
+			continue
+		}
+		paths = append(paths, expandedPath)
+		instances = append(instances, instance)
+		fmt.Printf("Expanded %s to %s\n", path, paths)
+	}
+	return paths, instances, nil
 }
