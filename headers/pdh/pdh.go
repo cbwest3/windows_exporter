@@ -309,6 +309,8 @@ type FMT_COUNTERVALUE_ITEM_LONG struct {
 	FmtValue FMT_COUNTERVALUE_LONG
 }
 
+var nullPtr *uint16
+
 var (
 	// Library
 	libpdhDll *windows.LazyDLL
