@@ -33,7 +33,7 @@ import (
 )
 
 func init() {
-	registerCollector("physical_disk", NewPhysicalDiskCollector, "PhysicalDisk")
+	registerCollector("physical_disk", NewPhysicalDiskCollector)
 }
 
 var (
