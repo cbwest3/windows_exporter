@@ -58,7 +58,7 @@ type PrometheusMetricMap struct {
 
 type PdhMetricMap struct {
 	CounterHandle pdh.HCOUNTER
-	DiskNumber    string
+	Instance      string
 }
 
 // NewPhysicalDiskCollector ...
@@ -311,7 +311,7 @@ func NewPhysicalDiskCollector() (Collector, error) {
 			// PhysicalDisk instances include disk number and optionally mounted drives, e.g. '1' or '1 C:'.
 			// We only use the disk number as a label.
 			diskNumber, _, _ := strings.Cut(instances[index], " ")
-			var pdhMetric = PdhMetricMap{CounterHandle: pdhCounterHandle, DiskNumber: diskNumber}
+			var pdhMetric = PdhMetricMap{CounterHandle: pdhCounterHandle, Instance: diskNumber}
 			metric.PdhMetrics = append(metric.PdhMetrics, &pdhMetric)
 		}
 	}
@@ -370,12 +370,12 @@ func (c *PhysicalDiskCollector) collect(ctx *ScrapeContext, ch chan<- prometheus
 			if counter.CStatus != pdh.CSTATUS_VALID_DATA { // Error checking
 				fmt.Printf("ERROR: Second CStatus is %s (0x%X)\n", pdh.Errors[counter.CStatus], counter.CStatus)
 			}
-			//fmt.Printf("metric.DiskNumber=%s, counter.DoubleValue=%f\n", pdhMetric.DiskNumber, counter.DoubleValue)
+			//fmt.Printf("metric.Instance=%s, counter.DoubleValue=%f\n", pdhMetric.Instance, counter.DoubleValue)
 			ch <- prometheus.MustNewConstMetric(
 				metric.PromDesc,
 				metric.PromValueType,
 				counter.DoubleValue,
-				pdhMetric.DiskNumber,
+				pdhMetric.Instance,
 			)
 		}
 	}
