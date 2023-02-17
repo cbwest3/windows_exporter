@@ -31,11 +31,12 @@
 package pdh
 
 import (
-	"fmt"
-	"golang.org/x/sys/windows"
 	"strings"
 	"syscall"
 	"unsafe"
+
+	"github.com/prometheus-community/windows_exporter/log"
+	"golang.org/x/sys/windows"
 )
 
 // Windows error codes from https://learn.microsoft.com/en-us/windows/win32/debug/system-error-codes--0-499-
@@ -621,7 +622,7 @@ func LocalizeAndExpandCounter(pdhQuery HQUERY, path string) (paths []string, ins
 	var counterHandle HCOUNTER
 	var ret = AddEnglishCounter(pdhQuery, path, 0, &counterHandle)
 	if ret != CSTATUS_VALID_DATA { // Error checking
-		fmt.Printf("ERROR: AddEnglishCounter return code is %s (0x%X)\n",
+		log.Errorf("AddEnglishCounter returned %s (0x%X)",
 			Errors[ret], ret)
 	}
 
@@ -631,13 +632,13 @@ func LocalizeAndExpandCounter(pdhQuery HQUERY, path string) (paths []string, ins
 	var retrieveExplainText uint32 = 0
 	ret = GetCounterInfo(counterHandle, uintptr(retrieveExplainText), &bufSize, nil)
 	if ret != MORE_DATA { // error checking
-		fmt.Printf("ERROR: First GetCounterInfo return code is %s (0x%X)\n", Errors[ret], ret)
+		log.Errorf("First GetCounterInfo returned %s (0x%X)", Errors[ret], ret)
 	}
 
 	var counterInfo COUNTER_INFO
 	ret = GetCounterInfo(counterHandle, uintptr(retrieveExplainText), &bufSize, &counterInfo)
 	if ret != CSTATUS_VALID_DATA { // error checking
-		fmt.Printf("ERROR: Second GetCounterInfo return code is %s (0x%X)\n", Errors[ret], ret)
+		log.Errorf("Second GetCounterInfo returned %s (0x%X)", Errors[ret], ret)
 	}
 
 	// Call ExpandWildCardPath twice, per
@@ -646,10 +647,10 @@ func LocalizeAndExpandCounter(pdhQuery HQUERY, path string) (paths []string, ins
 	var pathListLength uint32 = 0
 	ret = ExpandWildCardPath(nullPtr, counterInfo.SzFullPath, nullPtr, &pathListLength, &flags)
 	if ret != MORE_DATA { // error checking
-		fmt.Printf("ERROR: First ExpandWildCardPath return code is %s (0x%X)\n", Errors[ret], ret)
+		log.Errorf("First ExpandWildCardPath returned %s (0x%X)", Errors[ret], ret)
 	}
 	if pathListLength < 1 {
-		fmt.Printf("ERROR: SOMETHING IS WRONG. pathListLength < 1, is %d.\n", pathListLength)
+		log.Errorf("pathListLength < 1, is %d", pathListLength)
 	}
 
 	// TODO (cbwest): Handle PDH_MORE_DATA from https://learn.microsoft.com/en-us/windows/win32/api/pdh/nf-pdh-pdhexpandwildcardpathw.
@@ -657,15 +658,13 @@ func LocalizeAndExpandCounter(pdhQuery HQUERY, path string) (paths []string, ins
 	expandedPathList := make([]uint16, pathListLength)
 	ret = ExpandWildCardPath(nullPtr, counterInfo.SzFullPath, &expandedPathList[0], &pathListLength, &flags)
 	if ret != CSTATUS_VALID_DATA { // error checking
-		fmt.Printf("ERROR: Second ExpandWildCardPath return code is %s (0x%X)\n", Errors[ret], ret)
+		log.Errorf("Second ExpandWildCardPath returned %s (0x%X)", Errors[ret], ret)
 	}
 
 	var expandedPath string = ""
 	for i := 0; i < int(pathListLength); i += len(expandedPath) + 1 {
 		expandedPath = windows.UTF16PtrToString(&expandedPathList[i])
-		fmt.Printf("Beginning to parse expanded counter path: '%s'\n", expandedPath)
 		if len(expandedPath) < 1 { // expandedPathList has two nulls at the end.
-			fmt.Printf("Expanded counter path length is less than 1, skipping.\n")
 			continue
 		}
 
@@ -673,18 +672,17 @@ func LocalizeAndExpandCounter(pdhQuery HQUERY, path string) (paths []string, ins
 		instanceStartIndex := strings.Index(expandedPath, "(")
 		instanceEndIndex := strings.Index(expandedPath, ")")
 		if instanceStartIndex < 0 || instanceEndIndex < 0 {
-			fmt.Printf("Unable to parse PDH counter instance from '%s'\n", expandedPath)
+			log.Errorf("Unable to parse PDH counter instance from '%s'", expandedPath)
 			continue
 		}
 		instance := expandedPath[instanceStartIndex+1 : instanceEndIndex]
 
 		if instance == "_Total" { // Skip the _Total instance. That is for users to compute.
-			fmt.Printf("Skipping instance: '_Total'\n")
+			log.Debugf("Skipping instance '_Total' for path '%s'", expandedPath)
 			continue
 		}
 		paths = append(paths, expandedPath)
 		instances = append(instances, instance)
-		fmt.Printf("Expanded '%s' to\n\tpath:\t\t'%s'\n\tinstance:\t'%s'\n", path, expandedPath, instance)
 	}
 	return paths, instances, nil
 }
