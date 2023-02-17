@@ -31,6 +31,8 @@
 package pdh
 
 import (
+	"errors"
+	"fmt"
 	"strings"
 	"syscall"
 	"unsafe"
@@ -622,8 +624,7 @@ func LocalizeAndExpandCounter(pdhQuery HQUERY, path string) (paths []string, ins
 	var counterHandle HCOUNTER
 	var ret = AddEnglishCounter(pdhQuery, path, 0, &counterHandle)
 	if ret != CSTATUS_VALID_DATA { // Error checking
-		log.Errorf("AddEnglishCounter returned %s (0x%X)",
-			Errors[ret], ret)
+		return paths, instances, errors.New(fmt.Sprintf("AddEnglishCounter returned %s (0x%X)", Errors[ret], ret))
 	}
 
 	// Call GetCounterInfo twice to get buffer size, per
@@ -632,13 +633,13 @@ func LocalizeAndExpandCounter(pdhQuery HQUERY, path string) (paths []string, ins
 	var retrieveExplainText uint32 = 0
 	ret = GetCounterInfo(counterHandle, uintptr(retrieveExplainText), &bufSize, nil)
 	if ret != MORE_DATA { // error checking
-		log.Errorf("First GetCounterInfo returned %s (0x%X)", Errors[ret], ret)
+		return paths, instances, errors.New(fmt.Sprintf("First GetCounterInfo returned %s (0x%X)", Errors[ret], ret))
 	}
 
 	var counterInfo COUNTER_INFO
 	ret = GetCounterInfo(counterHandle, uintptr(retrieveExplainText), &bufSize, &counterInfo)
 	if ret != CSTATUS_VALID_DATA { // error checking
-		log.Errorf("Second GetCounterInfo returned %s (0x%X)", Errors[ret], ret)
+		return paths, instances, errors.New(fmt.Sprintf("Second GetCounterInfo returned %s (0x%X)", Errors[ret], ret))
 	}
 
 	// Call ExpandWildCardPath twice, per
@@ -647,10 +648,10 @@ func LocalizeAndExpandCounter(pdhQuery HQUERY, path string) (paths []string, ins
 	var pathListLength uint32 = 0
 	ret = ExpandWildCardPath(nullPtr, counterInfo.SzFullPath, nullPtr, &pathListLength, &flags)
 	if ret != MORE_DATA { // error checking
-		log.Errorf("First ExpandWildCardPath returned %s (0x%X)", Errors[ret], ret)
+		return paths, instances, errors.New(fmt.Sprintf("ERROR: First ExpandWildCardPath returned %s (0x%X)", Errors[ret], ret))
 	}
 	if pathListLength < 1 {
-		log.Errorf("pathListLength < 1, is %d", pathListLength)
+		return paths, instances, errors.New(fmt.Sprintf("pathListLength < 1, is %d", pathListLength))
 	}
 
 	// TODO (cbwest): Handle PDH_MORE_DATA from https://learn.microsoft.com/en-us/windows/win32/api/pdh/nf-pdh-pdhexpandwildcardpathw.
@@ -658,7 +659,7 @@ func LocalizeAndExpandCounter(pdhQuery HQUERY, path string) (paths []string, ins
 	expandedPathList := make([]uint16, pathListLength)
 	ret = ExpandWildCardPath(nullPtr, counterInfo.SzFullPath, &expandedPathList[0], &pathListLength, &flags)
 	if ret != CSTATUS_VALID_DATA { // error checking
-		log.Errorf("Second ExpandWildCardPath returned %s (0x%X)", Errors[ret], ret)
+		return paths, instances, errors.New(fmt.Sprintf("Second ExpandWildCardPath returned %s (0x%X)", Errors[ret], ret))
 	}
 
 	var expandedPath string = ""
