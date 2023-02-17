@@ -620,9 +620,9 @@ func ValidatePath(path string) uint32 {
 }
 
 // TODO (cbwest): Do proper error handling.
-func LocalizeAndExpandCounter(pdhQuery HQUERY, path string) (paths []string, instances []string, err error) {
+func (client *PdhClient) LocalizeAndExpandCounter(path string) (paths []string, instances []string, err error) {
 	var counterHandle HCOUNTER
-	var ret = AddEnglishCounter(pdhQuery, path, 0, &counterHandle)
+	var ret = AddEnglishCounter(client.QueryHandle, path, 0, &counterHandle)
 	if ret != CSTATUS_VALID_DATA { // Error checking
 		return paths, instances, errors.New(fmt.Sprintf("AddEnglishCounter returned %s (0x%X)", Errors[ret], ret))
 	}
@@ -686,4 +686,36 @@ func LocalizeAndExpandCounter(pdhQuery HQUERY, path string) (paths []string, ins
 		instances = append(instances, instance)
 	}
 	return paths, instances, nil
+}
+
+var (
+	QueryHandle HQUERY
+	userData    uintptr // TODO (cbwest): Figure out where to put this.
+)
+
+
+func CollectQueryData2() error {
+	ret := CollectQueryData(QueryHandle)
+	if ret != CSTATUS_VALID_DATA { // Error checking
+		errors.New(fmt.Sprintf("%s (0x%X)\n", Errors[ret], ret))
+	}
+	return nil
+}
+
+func AddCounter2(path string) (*HCOUNTER, error) {
+	var counterHandle HCOUNTER
+	// Open query if it doesn't exist.
+	if QueryHandle == 0 {
+		log.Debug("Attempting to open PDH query.")
+		if ret := OpenQuery(0, 0, &QueryHandle); ret != 0 {
+			return &counterHandle, errors.New(fmt.Sprintf("Failed to open PDH query, %s (0x%X).", Errors[ret], ret))
+		}
+		log.Debug("Opened PDH query successfully.")
+	}
+
+	ret := AddCounter(QueryHandle, path, userData, &counterHandle)
+	if ret != CSTATUS_VALID_DATA {
+		return &counterHandle, errors.New(fmt.Sprintf("'%s': %s (0x%X)\n", path, Errors[ret], ret))
+	}
+	return &counterHandle, nil
 }

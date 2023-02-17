@@ -43,7 +43,6 @@ var (
 // A PhysicalDiskCollector is a Prometheus collector for PhysicalDisk metrics gathered with PDH.
 type PhysicalDiskCollector struct {
 	PromMetrics []*PrometheusMetricMap
-	PdhQuery    *pdh.HQUERY
 }
 
 // Map a single Prometheus metric, e.g. read_latency_seconds_total, to one or
@@ -64,11 +63,7 @@ type PdhMetricMap struct {
 // NewPhysicalDiskCollector ...
 func NewPhysicalDiskCollector() (Collector, error) {
 	const subsystem = "physical_disk"
-	var queryHandle pdh.HQUERY
-	if ret := pdh.OpenQuery(0, 0, &queryHandle); ret != 0 {
-		log.Error("PdhOpenQuery return code is 0x%X", ret)
-	}
-	var pdc = PhysicalDiskCollector{PdhQuery: &queryHandle}
+	var pdc = PhysicalDiskCollector{}
 
 	// Queue length.
 	pdc.PromMetrics = append(pdc.PromMetrics, &PrometheusMetricMap{
@@ -292,35 +287,31 @@ func NewPhysicalDiskCollector() (Collector, error) {
 		),
 		PromValueType: prometheus.GaugeValue})
 
-	var userData uintptr
 	// Append expanded PDH counter to each metric. PDH instances become labels for Prometheus metrics.
 	for _, metric := range pdc.PromMetrics {
-		paths, instances, err := pdh.LocalizeAndExpandCounter(queryHandle, metric.PdhPath)
+		paths, instances, err := pdh.LocalizeAndExpandCounter(metric.PdhPath)
 		if err != nil {
 			log.Errorf("Failed to localize and expand wildcards for '%s': %s", metric.PdhPath, err)
 			continue
 		}
+
+		// ADD collector.go FUNCTION CALL TO STORE
 		for index, path := range paths {
-			var pdhCounterHandle pdh.HCOUNTER
-			ret := pdh.AddCounter(queryHandle, path, userData, &pdhCounterHandle)
-			if ret != pdh.CSTATUS_VALID_DATA {
-				log.Error("Failed to add expanded counter '%s': %s (0x%X)", path, pdh.Errors[ret], ret)
+
+			var pdhCounterHandle *pdh.HCOUNTER
+			pdhCounterHandle, err = pdh.AddCounter2(path)
+			if err != nil {
+				log.Errorf("Unable to fetch counter handle for metric '%s', instance '%s': %s",
+					path, instances[index], err)
 				continue
 			}
-
 			// PhysicalDisk instances include disk number and optionally mounted drives, e.g. '1' or '1 C:'.
 			// We only use the disk number as a label.
 			diskNumber, _, _ := strings.Cut(instances[index], " ")
 			log.Debugf("Parsed disk number '%s' from instance '%s'", diskNumber, instances[index])
-			var pdhMetric = PdhMetricMap{CounterHandle: pdhCounterHandle, Instance: diskNumber}
+			var pdhMetric = PdhMetricMap{CounterHandle: *pdhCounterHandle, Instance: diskNumber}
 			metric.PdhMetrics = append(metric.PdhMetrics, &pdhMetric)
 		}
-	}
-
-	// TODO (cbwest): Figure out where this should live.
-	ret := pdh.CollectQueryData(*pdc.PdhQuery)
-	if ret != pdh.CSTATUS_VALID_DATA { // Error checking
-		log.Error("Initial PdhCollectQueryData return code is %s (0x%X)", pdh.Errors[ret], ret)
 	}
 
 	return &pdc, nil
@@ -355,11 +346,7 @@ func (c *PhysicalDiskCollector) collect(ctx *ScrapeContext, ch chan<- prometheus
 	//		- Allow users to blacklist disks.
 	//		- Be smart enough to query disks, and if any were added/removed, re-enumerate.
 
-	ret := pdh.CollectQueryData(*c.PdhQuery)
-	if ret != pdh.CSTATUS_VALID_DATA { // Error checking
-		log.Error("First PdhCollectQueryData return code is %s (0x%X)", pdh.Errors[ret], ret)
-	}
-
+	var ret uint32
 	for _, metric := range c.PromMetrics {
 		//log.Error("%s has CounterHandles: %s", metric.PromDesc, metric.PdhMetrics)
 		for _, pdhMetric := range metric.PdhMetrics {
