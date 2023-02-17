@@ -641,7 +641,7 @@ func LocalizeAndExpandCounter(pdhQuery HQUERY, path string) (paths []string, ins
 	}
 
 	// Call ExpandWildCardPath twice, per
-	// https://learn.microsoft.com/en-us/windows/win32/api/pdh/nf-pdh-pdhexpandwildcardpathha#remarks.
+	// https://learn.microsoft.com/en-us/windows/win32/api/pdh/nf-pdh-pdhexpandwildcardpathw.
 	var flags uint32 = 0
 	var pathListLength uint32 = 0
 	ret = ExpandWildCardPath(nullPtr, counterInfo.SzFullPath, nullPtr, &pathListLength, &flags)
@@ -651,6 +651,8 @@ func LocalizeAndExpandCounter(pdhQuery HQUERY, path string) (paths []string, ins
 	if pathListLength < 1 {
 		fmt.Printf("ERROR: SOMETHING IS WRONG. pathListLength < 1, is %d.\n", pathListLength)
 	}
+
+	// TODO (cbwest): Handle PDH_MORE_DATA from https://learn.microsoft.com/en-us/windows/win32/api/pdh/nf-pdh-pdhexpandwildcardpathw.
 
 	expandedPathList := make([]uint16, pathListLength)
 	ret = ExpandWildCardPath(nullPtr, counterInfo.SzFullPath, &expandedPathList[0], &pathListLength, &flags)
