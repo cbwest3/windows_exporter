@@ -66,7 +66,7 @@ func NewPhysicalDiskCollector() (Collector, error) {
 	const subsystem = "physical_disk"
 	var queryHandle pdh.HQUERY
 	if ret := pdh.OpenQuery(0, 0, &queryHandle); ret != 0 {
-		fmt.Printf("ERROR: PdhOpenQuery return code is 0x%X\n", ret)
+		log.Error("PdhOpenQuery return code is 0x%X", ret)
 	}
 	var pdc = PhysicalDiskCollector{PdhQuery: &queryHandle}
 
@@ -297,20 +297,21 @@ func NewPhysicalDiskCollector() (Collector, error) {
 	for _, metric := range pdc.PromMetrics {
 		paths, instances, err := pdh.LocalizeAndExpandCounter(queryHandle, metric.PdhPath)
 		if err != nil {
-			fmt.Printf("ERROR: Failed to localize and expand wildcards for: %s", metric.PdhPath)
+			log.Errorf("Failed to localize and expand wildcards for '%s': %s", metric.PdhPath, err)
 			continue
 		}
 		for index, path := range paths {
 			var pdhCounterHandle pdh.HCOUNTER
 			ret := pdh.AddCounter(queryHandle, path, userData, &pdhCounterHandle)
 			if ret != pdh.CSTATUS_VALID_DATA {
-				fmt.Printf("ERROR: Failed to add expanded counter '%s': %s (0x%X)\n", path, pdh.Errors[ret], ret)
+				log.Error("Failed to add expanded counter '%s': %s (0x%X)", path, pdh.Errors[ret], ret)
 				continue
 			}
 
 			// PhysicalDisk instances include disk number and optionally mounted drives, e.g. '1' or '1 C:'.
 			// We only use the disk number as a label.
 			diskNumber, _, _ := strings.Cut(instances[index], " ")
+			log.Debugf("Parsed disk number '%s' from instance '%s'", diskNumber, instances[index])
 			var pdhMetric = PdhMetricMap{CounterHandle: pdhCounterHandle, Instance: diskNumber}
 			metric.PdhMetrics = append(metric.PdhMetrics, &pdhMetric)
 		}
@@ -319,7 +320,7 @@ func NewPhysicalDiskCollector() (Collector, error) {
 	// TODO (cbwest): Figure out where this should live.
 	ret := pdh.CollectQueryData(*pdc.PdhQuery)
 	if ret != pdh.CSTATUS_VALID_DATA { // Error checking
-		fmt.Printf("ERROR: Initial PdhCollectQueryData return code is %s (0x%X)\n", pdh.Errors[ret], ret)
+		log.Error("Initial PdhCollectQueryData return code is %s (0x%X)", pdh.Errors[ret], ret)
 	}
 
 	return &pdc, nil
@@ -356,21 +357,23 @@ func (c *PhysicalDiskCollector) collect(ctx *ScrapeContext, ch chan<- prometheus
 
 	ret := pdh.CollectQueryData(*c.PdhQuery)
 	if ret != pdh.CSTATUS_VALID_DATA { // Error checking
-		fmt.Printf("ERROR: First PdhCollectQueryData return code is %s (0x%X)\n", pdh.Errors[ret], ret)
+		log.Error("First PdhCollectQueryData return code is %s (0x%X)", pdh.Errors[ret], ret)
 	}
 
 	for _, metric := range c.PromMetrics {
-		//fmt.Printf("%s has CounterHandles: %s\n", metric.PromDesc, metric.PdhMetrics)
+		//log.Error("%s has CounterHandles: %s", metric.PromDesc, metric.PdhMetrics)
 		for _, pdhMetric := range metric.PdhMetrics {
 			var counter pdh.FMT_COUNTERVALUE_DOUBLE
 			ret = pdh.GetFormattedCounterValueDouble(pdhMetric.CounterHandle, &metric.PdhCounterType, &counter)
 			if ret != pdh.CSTATUS_VALID_DATA { // Error checking
-				fmt.Printf("ERROR: Second PdhGetFormattedCounterValueDouble return code is %s (0x%X)\n", pdh.Errors[ret], ret)
+				log.Errorf("GetFormattedCounterValueDouble returned %s (0x%X) for '%s'",
+					pdh.Errors[ret], ret, pdhMetric.CounterHandle)
+				continue
 			}
 			if counter.CStatus != pdh.CSTATUS_VALID_DATA { // Error checking
-				fmt.Printf("ERROR: Second CStatus is %s (0x%X)\n", pdh.Errors[counter.CStatus], counter.CStatus)
+				log.Errorf(fmt.Sprintf("Second CStatus is %s (0x%X)", pdh.Errors[counter.CStatus], counter.CStatus))
 			}
-			//fmt.Printf("metric.Instance=%s, counter.DoubleValue=%f\n", pdhMetric.Instance, counter.DoubleValue)
+			//log.Error("metric.Instance=%s, counter.DoubleValue=%f", pdhMetric.Instance, counter.DoubleValue)
 			ch <- prometheus.MustNewConstMetric(
 				metric.PromDesc,
 				metric.PromValueType,
