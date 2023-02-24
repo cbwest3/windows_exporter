@@ -314,6 +314,14 @@ func NewPhysicalDiskCollector() (Collector, error) {
 		}
 	}
 
+	// Issue initial collection for computing rates:
+	// https://learn.microsoft.com/en-us/windows/win32/api/pdh/nf-pdh-pdhgetformattedcountervalue#remarks
+	log.Debug("Fetching baseline for PDH rate counters.")
+	err := pdh.CollectQueryData2()
+	if err != nil { // Error checking
+		log.Error(err)
+	}
+
 	return &pdc, nil
 }
 
