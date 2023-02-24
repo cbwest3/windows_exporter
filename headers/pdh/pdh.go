@@ -620,9 +620,22 @@ func ValidatePath(path string) uint32 {
 }
 
 // TODO (cbwest): Do proper error handling.
-func (client *PdhClient) LocalizeAndExpandCounter(path string) (paths []string, instances []string, err error) {
+func LocalizeAndExpandCounter(path string) (paths []string, instances []string, err error) {
+
+	// Open query if it doesn't exist.
+	if QueryHandle == 0 {
+		log.Debug("Attempting to open PDH query.")
+
+		// var queryHandle HQUERY
+		if ret := OpenQuery(0, userData, &QueryHandle); ret != ERROR_SUCCESS {
+			return paths, instances, errors.New(fmt.Sprintf("Failed to open PDH query, %s (0x%X).", Errors[ret], ret))
+		}
+		// client.QueryHandle = &queryHandle
+		log.Debug("Opened PDH query successfully.")
+	}
+
 	var counterHandle HCOUNTER
-	var ret = AddEnglishCounter(client.QueryHandle, path, 0, &counterHandle)
+	var ret = AddEnglishCounter(QueryHandle, path, 0, &counterHandle)
 	if ret != CSTATUS_VALID_DATA { // Error checking
 		return paths, instances, errors.New(fmt.Sprintf("AddEnglishCounter returned %s (0x%X)", Errors[ret], ret))
 	}
