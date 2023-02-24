@@ -56,8 +56,9 @@ type PrometheusMetricMap struct {
 }
 
 type PdhMetricMap struct {
-	CounterHandle pdh.HCOUNTER
-	Instance      string
+	CounterHandle         pdh.HCOUNTER
+	LocalizedExpandedPath string
+	Instance              string
 }
 
 // NewPhysicalDiskCollector ...
@@ -308,8 +309,11 @@ func NewPhysicalDiskCollector() (Collector, error) {
 			// PhysicalDisk instances include disk number and optionally mounted drives, e.g. '1' or '1 C:'.
 			// We only use the disk number as a label.
 			diskNumber, _, _ := strings.Cut(instances[index], " ")
-			log.Debugf("Parsed disk number '%s' from instance '%s'", diskNumber, instances[index])
-			var pdhMetric = PdhMetricMap{CounterHandle: *pdhCounterHandle, Instance: diskNumber}
+			var pdhMetric = PdhMetricMap{
+				CounterHandle:         *pdhCounterHandle,
+				Instance:              diskNumber,
+				LocalizedExpandedPath: path}
+			log.Debug("New PdhMetricMap ", pdhMetric)
 			metric.PdhMetrics = append(metric.PdhMetrics, &pdhMetric)
 		}
 	}
@@ -362,7 +366,7 @@ func (c *PhysicalDiskCollector) collect(ctx *ScrapeContext, ch chan<- prometheus
 			ret = pdh.GetFormattedCounterValueDouble(pdhMetric.CounterHandle, &metric.PdhCounterType, &counter)
 			if ret != pdh.CSTATUS_VALID_DATA { // Error checking
 				log.Errorf("GetFormattedCounterValueDouble returned %s (0x%X) for '%s'",
-					pdh.Errors[ret], ret, pdhMetric.CounterHandle)
+					pdh.Errors[ret], ret, pdhMetric.LocalizedExpandedPath)
 				continue
 			}
 			if counter.CStatus != pdh.CSTATUS_VALID_DATA { // Error checking
