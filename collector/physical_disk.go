@@ -372,6 +372,7 @@ func (c *PhysicalDiskCollector) collect(ctx *ScrapeContext, ch chan<- prometheus
 			}
 			if counter.CStatus != pdh.CSTATUS_VALID_DATA { // Error checking
 				log.Errorf(fmt.Sprintf("Second CStatus is %s (0x%X)", pdh.Errors[counter.CStatus], counter.CStatus))
+				continue
 			}
 			//log.Error("metric.Instance=%s, counter.DoubleValue=%f", pdhMetric.Instance, counter.DoubleValue)
 			ch <- prometheus.MustNewConstMetric(
