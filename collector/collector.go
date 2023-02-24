@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/leoluk/perflib_exporter/perflib"
+	"github.com/prometheus-community/windows_exporter/headers/pdh"
 	"github.com/prometheus-community/windows_exporter/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/sys/windows/registry"
@@ -106,6 +107,12 @@ type ScrapeContext struct {
 
 // PrepareScrapeContext creates a ScrapeContext to be used during a single scrape
 func PrepareScrapeContext(collectors []string) (*ScrapeContext, error) {
+	if pdh.QueryHandle != 0 {
+		err := pdh.CollectQueryData2()
+		if err != nil { // Error checking
+			return nil, err
+		}
+	}
 	q := getPerfQuery(collectors) // TODO: Memoize
 	objs, err := getPerflibSnapshot(q)
 	if err != nil {
