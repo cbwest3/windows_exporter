@@ -14,7 +14,7 @@ import (
 )
 
 func init() {
-	registerCollector("physical_disk", NewPhysicalDiskCollector, "PhysicalDisk")
+	registerCollector("physical_disk_perflib", NewPhysicalDiskCollectorPerflib, "PhysicalDisk")
 }
 
 var (
@@ -28,8 +28,8 @@ var (
 	).Default("").String()
 )
 
-// A PhysicalDiskCollector is a Prometheus collector for perflib PhysicalDisk metrics
-type PhysicalDiskCollector struct {
+// A PhysicalDiskCollectorPerflib is a Prometheus collector for perflib PhysicalDisk metrics
+type PhysicalDiskCollectorPerflib struct {
 	RequestsQueued   *prometheus.Desc
 	ReadBytesTotal   *prometheus.Desc
 	ReadsTotal       *prometheus.Desc
@@ -47,11 +47,11 @@ type PhysicalDiskCollector struct {
 	diskBlacklistPattern *regexp.Regexp
 }
 
-// NewPhysicalDiskCollector ...
-func NewPhysicalDiskCollector() (Collector, error) {
-	const subsystem = "physical_disk"
+// NewPhysicalDiskCollectorPerflib ...
+func NewPhysicalDiskCollectorPerflib() (Collector, error) {
+	const subsystem = "physical_disk_perflib"
 
-	return &PhysicalDiskCollector{
+	return &PhysicalDiskCollectorPerflib{
 		RequestsQueued: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "requests_queued"),
 			"The number of requests queued to the disk (PhysicalDisk.CurrentDiskQueueLength)",
@@ -143,7 +143,7 @@ func NewPhysicalDiskCollector() (Collector, error) {
 
 // Collect sends the metric values for each metric
 // to the provided prometheus Metric channel.
-func (c *PhysicalDiskCollector) Collect(ctx *ScrapeContext, ch chan<- prometheus.Metric) error {
+func (c *PhysicalDiskCollectorPerflib) Collect(ctx *ScrapeContext, ch chan<- prometheus.Metric) error {
 	if desc, err := c.collect(ctx, ch); err != nil {
 		log.Error("failed collecting physical_disk metrics:", desc, err)
 		return err
@@ -169,7 +169,7 @@ type PhysicalDisk struct {
 	AvgDiskSecPerTransfer  float64 `perflib:"Avg. Disk sec/Transfer"`
 }
 
-func (c *PhysicalDiskCollector) collect(ctx *ScrapeContext, ch chan<- prometheus.Metric) (*prometheus.Desc, error) {
+func (c *PhysicalDiskCollectorPerflib) collect(ctx *ScrapeContext, ch chan<- prometheus.Metric) (*prometheus.Desc, error) {
 	var dst []PhysicalDisk
 	if err := unmarshalObject(ctx.perfObjects["PhysicalDisk"], &dst); err != nil {
 		return nil, err
