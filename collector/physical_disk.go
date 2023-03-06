@@ -33,7 +33,7 @@ import (
 )
 
 func init() {
-	registerCollector("physical_disk", NewPhysicalDiskCollector)
+	registerCollector("physical_disk_pdh", NewPhysicalDiskCollector)
 }
 
 var (
@@ -63,7 +63,7 @@ type PdhMetricMap struct {
 
 // NewPhysicalDiskCollector ...
 func NewPhysicalDiskCollector() (Collector, error) {
-	const subsystem = "physical_disk"
+	const subsystem = "physical_disk_pdh"
 	var pdc = PhysicalDiskCollector{}
 
 	// Queue length.

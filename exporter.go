@@ -50,7 +50,7 @@ type prometheusVersion struct {
 }
 
 const (
-	defaultCollectors            = "cpu,cs,logical_disk,net,os,physical_disk,physical_disk_perflib,service,system"
+	defaultCollectors            = "cpu,cs,logical_disk,net,os,physical_disk_pdh,physical_disk_perflib,service,system"
 	defaultCollectorsPlaceholder = "[defaults]"
 )
 
